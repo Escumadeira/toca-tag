@@ -1,0 +1,2 @@
+Coloque aqui: pass.pem, pass.key e wwdr.pem
+Veja ..\COMO-ATIVAR.txt

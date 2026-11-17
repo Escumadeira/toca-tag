@@ -1,0 +1,2 @@
+Coloque aqui: service-account.json
+Veja ..\COMO-ATIVAR.txt

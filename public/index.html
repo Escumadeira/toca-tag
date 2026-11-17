@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TOCA tag</title>
+<meta name="description" content="TOCA tag: chamada de presença por cartão NFC para faculdades e escolas. O aluno encosta o cartão, o professor vê foto e nome na hora.">
+<link rel="icon" href="mark.png">
+<style>
+/* Site do TOCA tag. Texto à esquerda, telas reais do aplicativo como imagem, os anéis da marca no fundo.
+   Uma família só, Inter: títulos em peso 600 com espaçamento apertado, texto em 400. */
+@font-face{font-family:"Inter";font-weight:100 900;font-style:normal;font-display:swap;src:url("fonts/inter-latin-wght-normal.woff2") format("woff2")}
+:root{
+  color-scheme:dark;
+  --night:#16130f; --ink:#f7f2e9; --ink-soft:rgba(247,242,233,.7); --ink-faint:rgba(247,242,233,.45);
+  --gold:#dcb872; --line:rgba(247,242,233,.14);
+  --display:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --wrap:1080px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--body);color:var(--ink);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(900px 620px at 0% 0%, rgba(220,184,114,.15), transparent 70%),
+    radial-gradient(circle at 100% 0%, transparent 0, transparent 420px, var(--night) 1100px),
+    repeating-radial-gradient(circle at 100% 0%, transparent 0 62px, rgba(220,184,114,.1) 62px 63.5px),
+    var(--night);
+  background-repeat:no-repeat;background-color:var(--night)}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:4px}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 24px}
+
+.nav{position:sticky;top:0;z-index:10;background:rgba(22,19,15,.72);-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:26px;height:60px}
+.nav img{height:30px}
+.nav nav{display:flex;gap:26px;margin-left:auto;font-size:15px}
+.nav nav a{text-decoration:none;color:var(--ink-soft)}
+.nav nav a:hover{color:var(--ink)}
+.open{display:inline-block;background:var(--gold);color:#241a08;font-weight:600;text-decoration:none;border-radius:9px;padding:9px 16px;font-size:15px}
+.open:hover{filter:brightness(1.08)}
+.open.big{padding:13px 22px;font-size:17px;border-radius:11px}
+
+h1,h2{font-family:var(--display);font-weight:600;letter-spacing:-.035em;text-wrap:balance;margin:0}
+h1{font-size:clamp(36px,5.2vw,62px);line-height:1.04}
+h2{font-size:clamp(26px,3.2vw,36px);line-height:1.12}
+h3{font-size:18px;font-weight:600;margin:0 0 6px}
+p{margin:0}
+
+.hero{padding-top:76px}
+.hero .text{max-width:720px}
+.hero p{font-size:20px;color:var(--ink-soft);max-width:52ch;margin:22px 0 30px}
+.hero .go{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.hero .go a.more{color:var(--ink-soft);text-underline-offset:4px}
+.shot{border-radius:14px;border:1px solid var(--line);box-shadow:0 40px 90px rgba(0,0,0,.5)}
+.hero .shot{margin-top:56px}
+figure{margin:0}
+figcaption{font-size:14.5px;color:var(--ink-faint);margin-top:12px}
+
+section{padding:96px 0 0}
+.lead{color:var(--ink-soft);max-width:58ch;margin-top:14px}
+
+/* telas */
+.screens{display:grid;grid-template-columns:1fr 260px;gap:48px;align-items:start;margin-top:40px}
+.phone{border-radius:30px;border:6px solid #2b2620;box-shadow:0 40px 90px rgba(0,0,0,.5)}
+.screens h3{margin-top:18px}
+.screens p{color:var(--ink-soft);font-size:16px;max-width:52ch}
+
+/* tabela dos modos */
+.tbl{overflow-x:auto;margin-top:32px}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{text-align:left;padding:16px 20px 16px 0;border-top:1px solid var(--line);vertical-align:top}
+thead th{border-top:0;font-size:14.5px;font-weight:500;color:var(--ink-faint);padding-bottom:10px}
+tbody th{font-weight:600;white-space:nowrap}
+tbody td{color:var(--ink-soft)}
+tbody tr:last-child th,tbody tr:last-child td{border-bottom:1px solid var(--line)}
+
+/* instalar e limites */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:64px}
+.two h2{margin-bottom:22px}
+.plain{margin:0;padding-left:22px;color:var(--ink-soft);display:flex;flex-direction:column;gap:10px}
+ol.plain li::marker{color:var(--gold)}
+code{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:.92em;background:rgba(247,242,233,.09);padding:2px 6px;border-radius:5px;color:var(--ink)}
+
+footer{margin-top:110px;border-top:1px solid var(--line);padding:30px 0 46px}
+footer .wrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+footer img{height:36px}
+footer p{color:var(--ink-faint);font-size:14.5px;margin-left:auto}
+
+@media (max-width:860px){
+  .nav nav{display:none}.nav .open{margin-left:auto}
+  .hero{padding-top:48px}.hero .shot{margin-top:40px}
+  section{padding-top:68px}
+  .screens{grid-template-columns:1fr;gap:36px}.phone{max-width:260px}
+  .two{grid-template-columns:1fr;gap:56px}
+}
+@media (max-width:480px){.wrap{padding:0 16px}body{font-size:16px}.hero p{font-size:18px}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap">
+    <a href="#inicio" aria-label="TOCA tag, início"><img src="logo.png" alt="TOCA, seu lugar de conexão"></a>
+    <nav aria-label="Seções">
+      <a href="#telas">Telas</a>
+      <a href="#leitura">Leitura do cartão</a>
+      <a href="#comecar">Como começar</a>
+    </nav>
+    <a class="open" href="app.html">Abrir o aplicativo</a>
+  </div>
+</header>
+
+<main id="inicio">
+  <div class="wrap hero">
+    <div class="text">
+      <h1>O aluno encosta o cartão. A presença está feita.</h1>
+      <p>TOCA tag é a chamada por cartão NFC para faculdades e escolas. A cada leitura, a tela do professor mostra a foto e o nome de quem passou.</p>
+      <div class="go">
+        <a class="open big" href="app.html">Abrir o aplicativo</a>
+        <a class="more" href="#telas">Veja as telas</a>
+      </div>
+    </div>
+    <figure>
+      <img class="shot" src="img/prof.jpg" width="1500" height="922" alt="Tela do professor durante a chamada de Cálculo I: à esquerda, o aluno que acabou de encostar o cartão, com a mensagem de entrada registrada às 19:02; à direita, a lista da turma com a situação de cada aluno.">
+      <figcaption>A tela do professor durante a chamada. Os alunos são de exemplo.</figcaption>
+    </figure>
+  </div>
+
+  <section id="telas">
+    <div class="wrap">
+      <h2>O que a secretaria e o aluno veem</h2>
+      <p class="lead">Alunos, turmas e chamadas ficam salvos na nuvem, e todos os aparelhos veem os mesmos dados.</p>
+      <div class="screens">
+        <figure>
+          <img class="shot" src="img/inst.jpg" width="1500" height="798" alt="Painel da instituição com a lista de alunos, o RA, o curso, as turmas e o cartão vinculado a cada um.">
+          <h3>Painel da instituição</h3>
+          <p>A secretaria cuida de alunos, cartões, turmas e dos logins dos professores. Cada instituição vê só os próprios dados.</p>
+        </figure>
+        <figure>
+          <img class="phone" src="img/aluno.jpg" width="640" height="1247" alt="Cartão digital do aluno no celular, com nome, RA, o código de presença e a lista das presenças dele.">
+          <h3>Cartão digital do aluno</h3>
+          <p>O aluno entra com o nome da instituição, a matrícula e a senha dele. No cartão ficam o código e o QR code de presença, e o histórico das aulas.</p>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="leitura">
+    <div class="wrap">
+      <h2>Quando a leitura do cartão vale</h2>
+      <p class="lead">Cada turma tem um padrão, e o professor pode trocar ao iniciar qualquer chamada.</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th scope="col">Modo</th><th scope="col">O aluno encosta o cartão</th><th scope="col">Conta presença</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Na entrada</th><td>Uma vez, ao chegar</td><td>Com a leitura da chegada</td></tr>
+            <tr><th scope="row">Na saída</th><td>Uma vez, ao sair</td><td>Só para quem ficou até o fim e leu o cartão na saída</td></tr>
+            <tr><th scope="row">Entrada e saída</th><td>Duas vezes, ao chegar e ao sair</td><td>Com as duas leituras</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="comecar">
+    <div class="wrap two">
+      <div>
+        <h2>Como a instituição começa</h2>
+        <ol class="plain">
+          <li>A TOCA cadastra a faculdade ou escola e entrega o login da secretaria.</li>
+          <li>A secretaria cadastra alunos, cartões e turmas, e cria o login de cada professor.</li>
+          <li>Cada professor entra com o próprio login, abre a turma e faz a chamada.</li>
+        </ol>
+      </div>
+      <div>
+        <h2>O que é preciso ter</h2>
+        <ul class="plain">
+          <li>Um computador ou celular com navegador para a secretaria e para cada professor.</li>
+          <li>Um leitor USB de cartões NFC na sala. Ele funciona como um teclado, sem programa extra.</li>
+          <li>Um cartão NFC por aluno. Quem esquecer o cartão mostra o QR code do cartão digital no celular.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <img src="logo.png" alt="TOCA">
+    <a class="open" href="app.html">Abrir o aplicativo</a>
+    <p>TOCA tag, chamada por cartão NFC.</p>
+  </div>
+</footer>
+</body>
+</html>

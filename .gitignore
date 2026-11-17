@@ -1,0 +1,30 @@
+# Nada disto pode ir para o GitHub: são dados de alunos, senhas e chaves.
+
+# Banco de dados, cópias de segurança e registros
+dados/
+
+# Token do túnel da Cloudflare (quem tiver esse token publica no seu domínio)
+tunel-token.txt
+
+# Conta de e-mail (tem senha). Use email/config.exemplo.json como modelo.
+email/config.json
+
+# Carteira da Apple e do Google: certificados e chaves
+carteira/config.json
+carteira/apple/*
+!carteira/apple/modelo/
+!carteira/apple/coloque-aqui.txt
+carteira/google/*
+!carteira/google/coloque-aqui.txt
+*.pem
+*.key
+*.p12
+*.pkpass
+service-account*.json
+
+# Node.js baixado pelo iniciar.bat e arquivos de uso do servidor
+node/
+node_modules/
+reiniciar.flag
+*.log
+*.tmp

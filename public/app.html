@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16130f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TOCA tag">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>TOCA tag</title>
+<link rel="icon" href="mark.png">
+<style>
+@font-face{font-family:"Inter";font-weight:100 900;font-style:normal;font-display:swap;src:url("fonts/inter-latin-wght-normal.woff2") format("woff2")}
+/* Layout: wallpaper > barra de menus > uma janela de vidro > Dock para trocar de área. Tema único, escuro e dourado, da marca. */
+:root{
+  color-scheme:dark;
+  --night:#16130f;
+  --ink:#f7f2e9;
+  --ink-soft:rgba(247,242,233,.64);
+  --ink-faint:rgba(247,242,233,.38);
+  --gold:#dcb872;
+  --gold-deep:#a37d3c;
+  --glass:rgba(255,255,255,.075);
+  --glass-hi:rgba(255,255,255,.13);
+  --glass-low:rgba(0,0,0,.22);
+  --stroke:rgba(255,255,255,.16);
+  --stroke-soft:rgba(255,255,255,.09);
+  --ok:#62d894; --wait:#f4c552; --bad:#ff7466;
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --r-win:20px; --r-card:14px; --r-ctl:10px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:var(--font);color:var(--ink);font-size:15px;line-height:1.4;
+  background:
+    radial-gradient(70% 55% at 0% 0%, rgba(220,184,114,.16), transparent 62%),
+    radial-gradient(circle at 100% 0%, transparent 0, transparent 26%, var(--night) 70%),
+    repeating-radial-gradient(circle at 100% 0%, transparent 0 62px, rgba(220,184,114,.09) 62px 63.5px),
+    var(--night);
+  background-attachment:fixed;
+  display:flex;flex-direction:column;overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+img{max-width:100%}
+.glass{
+  background:var(--glass);
+  -webkit-backdrop-filter:blur(30px) saturate(170%);backdrop-filter:blur(30px) saturate(170%);
+  border:1px solid var(--stroke);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22), 0 24px 60px rgba(0,0,0,.38);
+}
+
+/* Barra de menus */
+.menubar{height:30px;flex:none;display:flex;align-items:center;gap:14px;padding:0 14px;
+  background:rgba(20,16,12,.38);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--stroke-soft);font-size:13px}
+.menubar img{height:17px;width:auto}
+.menubar b{font-weight:600;letter-spacing:.01em}
+.menubar .sp{flex:1}
+.sync{display:inline-flex;align-items:center;gap:6px;color:var(--ink-soft)}
+.sync i{width:7px;height:7px;border-radius:50%;background:var(--wait)}
+.sync.on i{background:var(--ok)} .sync.off i{background:var(--bad)}
+#clock{font-variant-numeric:tabular-nums;color:var(--ink-soft)}
+
+/* Janela */
+.stage{flex:1;min-height:0;display:flex;padding:16px 16px 8px}
+.window{flex:1;min-width:0;max-width:1240px;margin:0 auto;border-radius:var(--r-win);display:flex;flex-direction:column;overflow:hidden}
+.titlebar{flex:none;height:46px;display:flex;align-items:center;gap:12px;padding:0 14px;border-bottom:1px solid var(--stroke-soft);background:rgba(255,255,255,.04)}
+.titlebar h1{font-size:14px;font-weight:600;margin:0;flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.body{flex:1;min-height:0;display:flex}
+.side{flex:none;width:214px;padding:14px 10px;border-right:1px solid var(--stroke-soft);background:var(--glass-low);display:flex;flex-direction:column;gap:4px}
+.side .brand{padding:6px 8px 14px}
+.side .brand img{width:150px;display:block}
+.side button{display:flex;align-items:center;gap:10px;border:0;background:none;padding:8px 10px;border-radius:8px;text-align:left;color:var(--ink-soft);font-weight:500}
+.side button:hover{background:var(--glass)}
+.side button[aria-current="true"]{background:var(--glass-hi);color:var(--ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
+.side button svg{color:var(--gold)}
+.side .n{margin-left:auto;font-size:12px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+.main{flex:1;min-width:0;overflow:auto;padding:20px 22px 26px}
+.head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.head h2{font-size:24px;font-weight:700;letter-spacing:-.02em;margin:0;flex:1;min-width:160px;text-wrap:balance}
+.sub{color:var(--ink-soft);margin:-10px 0 16px;max-width:64ch}
+
+/* Controles */
+.btn{border:1px solid var(--stroke);background:var(--glass-hi);border-radius:var(--r-ctl);padding:8px 14px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+.btn:hover{background:rgba(255,255,255,.2)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.gold{background:var(--gold);color:#241a08;border-color:transparent;box-shadow:none}
+.btn.gold:hover{filter:brightness(1.07)}
+.btn.danger{color:var(--bad)}
+.btn.sm{padding:5px 10px;font-size:13px;border-radius:8px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label,.lbl{font-size:13px;color:var(--ink-soft);font-weight:500}
+.inp{width:100%;background:rgba(0,0,0,.26);border:1px solid var(--stroke);border-radius:var(--r-ctl);padding:9px 12px;box-shadow:inset 0 1px 2px rgba(0,0,0,.3)}
+.inp::placeholder{color:var(--ink-faint)}
+select.inp{appearance:none;padding-right:30px;background-image:linear-gradient(45deg,transparent 50%,var(--ink-soft) 50%),linear-gradient(135deg,var(--ink-soft) 50%,transparent 50%);background-position:calc(100% - 16px) 55%,calc(100% - 11px) 55%;background-size:5px 5px;background-repeat:no-repeat}
+.search{max-width:260px}
+.seg{display:inline-flex;padding:3px;border-radius:11px;background:rgba(0,0,0,.3);border:1px solid var(--stroke-soft);gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:none;padding:6px 13px;border-radius:8px;font-weight:600;font-size:13.5px;color:var(--ink-soft)}
+.seg button[aria-pressed="true"]{background:var(--glass-hi);color:var(--ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 2px 8px rgba(0,0,0,.3)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid var(--stroke-soft);background:rgba(0,0,0,.22);white-space:nowrap}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ink-faint)}
+.chip.ok{color:var(--ok)}.chip.ok::before{background:var(--ok)}
+.chip.wait{color:var(--wait)}.chip.wait::before{background:var(--wait)}
+.chip.bad{color:var(--bad)}.chip.bad::before{background:var(--bad)}
+.chip.plain::before{display:none}
+
+/* Listas */
+.card{border-radius:var(--r-card);background:var(--glass);border:1px solid var(--stroke-soft)}
+.rows{display:flex;flex-direction:column}
+.row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--stroke-soft);min-width:0}
+.row:last-child{border-bottom:0}
+button.row{border-left:0;border-right:0;border-top:0;background:none;text-align:left;width:100%}
+button.row:hover{background:var(--glass)}
+.who{flex:1;min-width:0}
+.who b{display:block;font-weight:600;overflow-wrap:anywhere}
+.who span{display:block;font-size:13px;color:var(--ink-soft);overflow-wrap:anywhere}
+.acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.av{flex:none;width:42px;height:42px;border-radius:50%;object-fit:cover;background:rgba(220,184,114,.22);display:grid;place-items:center;font-weight:700;font-size:15px;color:var(--ink);border:1px solid var(--stroke)}
+.av.lg{width:132px;height:132px;font-size:44px;border-width:2px}
+.av.md{width:76px;height:76px;font-size:26px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.tile{padding:16px;display:flex;flex-direction:column;gap:10px}
+.tile h3{margin:0;font-size:17px;font-weight:700}
+.tile p{margin:0;color:var(--ink-soft);font-size:13.5px}
+.empty{padding:38px 20px;text-align:center;color:var(--ink-soft)}
+.empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}
+.banner{padding:10px 14px;border-radius:var(--r-ctl);background:rgba(244,197,82,.12);border:1px solid rgba(244,197,82,.35);margin-bottom:14px;font-size:14px}
+
+/* Chamada ao vivo */
+.live{display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:16px;align-items:start}
+.reader{padding:20px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;position:sticky;top:0}
+.ring{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;position:relative;border:1px solid var(--stroke)}
+.ring::before,.ring::after{content:"";position:absolute;inset:0;border-radius:50%;border:1.5px solid var(--gold);opacity:0;animation:pulse 2.6s ease-out infinite}
+.ring::after{animation-delay:1.3s}
+.ring img{width:74px}
+@keyframes pulse{0%{transform:scale(.72);opacity:.75}100%{transform:scale(1.28);opacity:0}}
+.blip{display:flex;flex-direction:column;align-items:center;gap:8px}
+.blip.new{animation:pop .32s cubic-bezier(.2,1.3,.4,1)}
+@keyframes pop{from{transform:scale(.86);opacity:.3}to{transform:none;opacity:1}}
+.blip .av.lg{box-shadow:0 0 0 4px rgba(98,216,148,.5),0 16px 40px rgba(0,0,0,.4)}
+.blip.dup .av.lg{box-shadow:0 0 0 4px rgba(244,197,82,.55),0 16px 40px rgba(0,0,0,.4)}
+.blip.err .av.lg{box-shadow:0 0 0 4px rgba(255,116,102,.55),0 16px 40px rgba(0,0,0,.4)}
+.blip h3{margin:6px 0 0;font-size:22px;font-weight:700;letter-spacing:-.01em;overflow-wrap:anywhere}
+.blip p{margin:0;color:var(--ink-soft)}
+.blip .msg{font-weight:700;font-size:16px;color:var(--ok)}
+.askrow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px}.blip.ask .msg{color:var(--wait)}
+.blip.dup .msg{color:var(--wait)}.blip.err .msg{color:var(--bad)}
+.reader h3.idle{margin:0;font-size:19px}
+.reader small{color:var(--ink-soft);font-size:13px;max-width:34ch}
+.typing{font-variant-numeric:tabular-nums;letter-spacing:.14em;min-height:20px;color:var(--gold);font-weight:600}
+.coderow{display:flex;gap:8px;width:100%}
+.count{font-size:15px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.count b{font-size:26px;color:var(--ink);font-weight:700}
+
+/* Cartão digital */
+.wallet{display:grid;grid-template-columns:minmax(280px,400px) 1fr;gap:22px;align-items:start}
+.pass{border-radius:22px;padding:20px;min-height:230px;gap:12px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;color:#231806;
+  background:linear-gradient(160deg,#e6c888,#c9a25c);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 26px 50px rgba(0,0,0,.45)}
+.pass::before{content:"";position:absolute;inset:0;background:repeating-radial-gradient(circle at 100% 0%,transparent 0 30px,rgba(35,24,6,.07) 30px 31px)}
+.pass>*{position:relative}
+.pass .top{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px}
+.pass .top span{margin-left:auto;font-weight:600;font-size:12.5px;opacity:.75}
+.pass .mid{display:flex;align-items:center;gap:14px}
+.pass .av{border-color:rgba(255,255,255,.7);color:#231806;background:rgba(255,255,255,.35)}
+.pass .mid b{display:block;font-size:19px;line-height:1.15;overflow-wrap:anywhere}
+.pass .mid span{font-size:13px;opacity:.8}
+.pass .bot{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.pass .code{font-size:30px;font-weight:700;letter-spacing:.16em;font-variant-numeric:tabular-nums}
+.pass .lblc{font-size:12px;opacity:.75;display:block}
+.bar{height:4px;border-radius:2px;background:rgba(35,24,6,.2);overflow:hidden;margin-top:6px;width:150px}
+.bar i{display:block;height:100%;background:#231806;border-radius:2px;transition:width 1s linear}
+.note{font-size:13.5px;color:var(--ink-soft);margin:14px 0 0;max-width:46ch}
+
+/* Dock */
+.dockwrap{flex:none;display:flex;justify-content:center;padding:0 12px 10px}
+.dock{display:flex;gap:6px;padding:7px 9px;border-radius:22px}
+.dock button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:2px 10px;font-size:11.5px;font-weight:600;color:var(--ink-soft);transition:transform .16s ease;transform-origin:bottom center;position:relative}
+.dock button .ic{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;border:1px solid var(--stroke);background:linear-gradient(160deg,rgba(255,255,255,.22),rgba(255,255,255,.05));box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 14px rgba(0,0,0,.3);color:var(--ink)}
+.dock button:hover{transform:scale(1.14) translateY(-3px)}
+.dock button[aria-current="true"]{color:var(--ink)}
+.dock button[aria-current="true"] .ic{background:var(--gold);color:#241a08}
+.dock button[aria-current="true"]::after{content:"";position:absolute;bottom:-5px;width:4px;height:4px;border-radius:50%;background:var(--ink)}
+
+/* Folha (modal) */
+.veil{position:fixed;inset:0;background:rgba(6,5,4,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:20}
+.veil.open{display:flex}
+.sheet{width:min(560px,100%);max-height:100%;overflow:auto;border-radius:18px;padding:22px;background:rgba(38,32,26,.72);animation:pop .22s ease-out}
+.sheet.wide{width:min(980px,100%)}
+.sheet h2{margin:0 0 4px;font-size:20px}
+.sheet .sub{margin:0 0 16px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form .full{grid-column:1/-1}
+.photo{display:flex;align-items:center;gap:14px}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.checks label{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:9px;border:1px solid var(--stroke-soft);background:rgba(0,0,0,.2);font-size:14px;color:var(--ink)}
+.foot{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.foot .l{margin-right:auto}
+.err{color:var(--bad);font-size:13.5px;min-height:18px;margin-top:8px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--stroke-soft);white-space:nowrap}
+th{font-weight:600;color:var(--ink-soft);font-size:13px}
+td.t{font-variant-numeric:tabular-nums}
+.toast{position:fixed;left:50%;bottom:104px;transform:translateX(-50%);padding:10px 16px;border-radius:12px;background:rgba(38,32,26,.85);z-index:30;font-size:14px;font-weight:500;max-width:calc(100% - 32px);display:none}
+.toast.show{display:block;animation:pop .2s ease-out}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+@media (max-width:820px){
+  .stage{padding:0}
+  .window{border-radius:0;border-left:0;border-right:0}
+  .body{flex-direction:column}
+  .side{width:auto;flex-direction:row;border-right:0;border-bottom:1px solid var(--stroke-soft);padding:8px 10px;overflow-x:auto}
+  .side .brand{display:none}
+  .side button{flex:none}
+  .main{padding:16px}
+  .live,.wallet{grid-template-columns:1fr}
+  .reader{position:static}
+  .form{grid-template-columns:1fr}
+  .dockwrap{padding-top:8px}
+  .dock button .ic{width:40px;height:40px}
+  .menubar .sync span{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* contas e administração */
+[hidden]{display:none!important}
+.tname{color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.who-btn{border:1px solid var(--stroke-soft);background:var(--glass);border-radius:7px;padding:2px 10px;font-size:12.5px;font-weight:600;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who-btn:hover{background:var(--glass-hi)}
+.gate{display:flex;align-items:flex-start;justify-content:center;padding-top:5vh}
+.gatebox{width:min(380px,100%);display:flex;flex-direction:column;gap:14px}
+.gatebox h2{margin:0;font-size:22px;letter-spacing:-.02em}
+.gatebox .sub{margin:0}
+.gatelogo{width:170px;margin-bottom:6px}
+.gateform{display:flex;flex-direction:column;gap:14px}
+.gatebox .seg{align-self:flex-start}
+.gatebox .err{margin:0;min-height:0}
+.gatebox .note{margin:0}
+.linkbtn{background:none;border:0;padding:0;color:var(--gold);text-decoration:underline;text-underline-offset:3px;align-self:flex-start;font-size:14px}
+.stats{display:flex;gap:34px;flex-wrap:wrap;margin:0 0 18px;padding:0 2px}
+.stats b{display:block;font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.stats span{font-size:13px;color:var(--ink-soft)}
+.nums{font-size:13px;color:var(--ink-soft);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.codebox{margin-top:auto;padding:10px;font-size:12.5px;color:var(--ink-soft);border-top:1px solid var(--stroke-soft)}
+.codebox b{display:block;font-size:14px;color:var(--ink);margin-top:2px;overflow-wrap:anywhere}
+.pwrow{display:grid;grid-template-columns:1fr 200px;gap:10px;align-items:center;margin-bottom:8px;font-size:14px}
+@media (max-width:820px){.codebox{display:none}.nums{display:none}.pwrow{grid-template-columns:1fr}.tname{display:none}}
+.qr{width:96px;height:96px;flex:none;background:#fff;border-radius:10px;padding:5px;display:grid;place-items:center}
+.qr svg{width:100%;height:100%;display:block}
+.wbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.qrbig{width:min(260px,78%);margin:0 auto 16px;border-radius:14px;overflow:hidden;background:#fff}
+.qrbig img{width:100%;display:block}
+.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;color:var(--ink-soft);font-size:14.5px}
+.wbtn{background:#000;color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:10px;padding:10px 16px;font-weight:600;font-size:14.5px}
+.wbtn:hover{background:#1c1c1c}
+.cam{border-radius:14px;overflow:hidden;background:#000;aspect-ratio:4/3;display:grid;place-items:center}
+.cam video{width:100%;height:100%;object-fit:cover}
+.cam-msg{min-height:22px;margin-top:10px;font-weight:600}
+.cam-msg.ok{color:var(--ok)}.cam-msg.dup{color:var(--wait)}.cam-msg.err{color:var(--bad)}
+.av{object-position:50% 20%}
+.av.ph{width:66px;height:88px;border-radius:10px}
+.photo .av.ph{width:60px;height:80px}
+.photo>:first-child{flex:none}
+.photo .field{flex:1;min-width:0}
+.need{padding:22px;display:flex;flex-direction:column;gap:10px;max-width:420px}
+.need h3{margin:0;font-size:19px}
+.need p{margin:0;color:var(--ink-soft);font-size:14.5px}
+.tips{margin:0;padding-left:20px;color:var(--ink-soft);font-size:14.5px;display:flex;flex-direction:column;gap:6px}
+/* frequência do aluno */
+.sec{margin:0 0 22px}
+.sec h3{margin:0 0 10px;font-size:17px;font-weight:700}
+.hmwrap{overflow-x:auto;padding:2px 2px 8px}
+.hmin{width:max-content}
+.hmm{display:grid;grid-template-columns:repeat(26,13px);gap:3px;margin:0 0 4px 30px;font-size:11px;color:var(--ink-soft);height:14px}
+.hmm span{white-space:nowrap}
+.hmrow{display:flex;gap:6px}
+.hmd{display:grid;grid-template-rows:repeat(7,13px);gap:3px;font-size:10.5px;color:var(--ink-faint);width:24px;line-height:13px}
+.hmgrid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,13px);grid-auto-columns:13px;gap:3px}
+.hm{width:13px;height:13px;border-radius:3px;border:0;padding:0;background:rgba(255,255,255,.08)}
+.hm.l1{background:rgba(220,184,114,.42)}.hm.l2{background:rgba(220,184,114,.72)}.hm.l3{background:var(--gold)}
+.hm.lx{background:rgba(255,116,102,.45)}
+.hm.lh{background:rgba(244,197,82,.5)}
+.h2g{display:flex;align-items:center;gap:10px}
+.tileacts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.btn.ic{padding:6px 9px;display:inline-flex;align-items:center}
+.viewonly{margin:0 0 14px;padding:10px 14px;border-radius:12px;background:rgba(244,197,82,.1);border:1px solid rgba(244,197,82,.25);font-size:13.5px}
+.perms{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.addrow{display:flex;gap:10px;margin:6px 0 10px}.addrow .inp{flex:1}
+.crow{gap:12px}.crow .inp{flex:1;min-width:0}
+@media (max-width:820px){.main{overflow-x:hidden}.row .who{min-width:0}.row .chip{max-width:100%}}
+.weakpw{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:0 0 16px;padding:12px 16px;border-radius:14px;background:rgba(255,116,102,.12);border:1px solid rgba(255,116,102,.4);font-size:14px}
+.fcount{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-6px 0 12px;font-size:13px;opacity:.75}
+.jtext{white-space:pre-wrap;line-height:1.5;margin:4px 0 14px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.06)}
+.jimgs{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 14px}.jimgs:empty{display:none}
+.jimgs img{width:132px;height:132px;object-fit:cover;border-radius:10px;display:block;background:#fff}
+.jthumb{display:flex;flex-direction:column;gap:6px;align-items:stretch}
+.jsign{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:12px;border-top:1px solid rgba(255,255,255,.12);margin-bottom:12px}
+.jsign img{width:220px;max-width:100%;border-radius:8px;background:#fff}
+.jsign span{font-size:13px;opacity:.8;line-height:1.45}.jsign b{display:block;font-size:15px;opacity:1}
+.pad{display:block;width:100%;height:150px;border-radius:12px;background:#fff;touch-action:none;cursor:crosshair}
+.padbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
+textarea.inp{resize:vertical;min-height:96px;font:inherit}
+.hm.lj{background:rgba(143,184,255,.5)}
+.chip.just{color:#9cc0ff}.chip.just::before{background:#9cc0ff}
+.hm.off{visibility:hidden}
+.hm.sel{outline:2px solid var(--ink);outline-offset:1px}
+.hmleg{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-soft);margin-top:6px}
+.hmleg span{display:inline-flex;align-items:center;gap:5px}
+.hmleg i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.daybox{margin-top:12px}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 16px}
+.filters.f3{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+.head .acts{flex-wrap:wrap}
+tr.link{cursor:pointer}
+.inp.tm{padding:5px 8px;min-height:0;width:112px;font-size:14px;color-scheme:dark}
+tr.link:hover td{background:var(--glass)}
+.printhead{display:none}
+@media print{
+  html,body{height:auto!important;overflow:visible!important;background:#fff!important;color:#000!important}
+  body{display:block}
+  .menubar,.side,.dockwrap,.titlebar,.noprint,.toast,.veil{display:none!important}
+  .stage,.window,.body,.main{display:block!important;overflow:visible!important;height:auto!important;padding:0!important;border:0!important;box-shadow:none!important;background:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;max-width:none!important}
+  .head h2{font-size:18px;color:#000}
+  .printhead{display:block;margin:0 0 12px;font-size:12px;line-height:1.5;color:#000}
+  .printhead b{display:block;font-size:15px}
+  .stats{gap:26px;margin-bottom:10px}.stats b{font-size:16px;color:#000}.stats span,.note{color:#333!important;font-size:11px}
+  .card{background:none!important;border:0!important}
+  .tbl{overflow:visible!important}
+  table{font-size:11px}th,td{color:#000!important;border-bottom:1px solid #999!important;padding:4px 6px!important;white-space:normal!important}
+  th{border-bottom:1.5px solid #000!important}
+  thead{display:table-header-group}tr{break-inside:avoid}
+}
+input[type=date].inp{color-scheme:dark;min-width:0}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---------- celular ---------- */
+@media (max-width:820px){
+  html,body{height:100dvh}
+  .menubar{height:auto;min-height:46px;padding:env(safe-area-inset-top) max(14px,env(safe-area-inset-right)) 0 max(14px,env(safe-area-inset-left));gap:10px;font-size:14px}
+  .menubar img{height:22px}
+  .menubar .sp{display:none}
+  .tname{display:block;flex:1;font-size:13px}
+  #clock{display:none}
+  .who-btn{padding:7px 12px;font-size:13.5px;max-width:46vw;border-radius:9px}
+  .titlebar{display:none}
+  .window{border:0;box-shadow:none;background:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .main{padding:16px max(16px,env(safe-area-inset-right)) 28px max(16px,env(safe-area-inset-left))}
+  .head{gap:10px;margin-bottom:14px}
+  .head h2{font-size:23px;flex:1 1 100%;min-width:0}
+  .head .search{max-width:none;flex:1 1 100%}
+  .head .btn{flex:1 1 auto;justify-content:center}
+  .sub{margin:-4px 0 14px}
+  .btn{min-height:44px;padding:10px 16px;font-size:15px}
+  .btn.sm{min-height:40px;padding:8px 12px;font-size:14px}
+  .inp,select.inp{font-size:16px;min-height:46px}
+  input[type=file]{font-size:15px;max-width:100%}
+  .seg button{padding:9px 14px;font-size:14.5px}
+  .linkbtn{padding:8px 0;font-size:15px}
+  /* abas da secretaria: faixa de pílulas que rola para o lado */
+  .side{gap:8px;padding:10px 14px;scrollbar-width:none;background:none}
+  .side::-webkit-scrollbar{display:none}
+  .side button{padding:8px 14px;border-radius:999px;background:var(--glass);border:1px solid var(--stroke-soft);min-height:40px;gap:6px}
+  .side button svg{display:none}
+  .side .n{margin-left:2px}
+  /* nada pode empurrar a tela para o lado */
+  .wallet>*,.live>*,.form>*,.photo>*,.field{min-width:0}
+  .hmwrap{max-width:100%}
+  .sheet{overflow-x:hidden}
+  .photo{align-items:flex-start}
+  .photo>:first-child{flex:none}
+  /* listas */
+  .row{flex-wrap:wrap;padding:12px 14px;row-gap:8px}
+  .row .who{flex:1 1 calc(100% - 60px)}
+  .row .acts{flex:1 1 100%;justify-content:stretch}
+  .row .acts .btn{flex:1;justify-content:center}
+  .grid{grid-template-columns:1fr}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px}
+  .stats b{font-size:22px}
+  th,td{padding:10px 8px;font-size:13.5px}
+  table.subj th:nth-child(2),table.subj td:nth-child(2),table.subj th:nth-child(3),table.subj td:nth-child(3),table.subj th:nth-child(4),table.subj td:nth-child(4){display:none}
+  table.subj th:first-child,table.subj td:first-child{white-space:normal;overflow-wrap:anywhere}
+  table.subj th,table.subj td{padding:10px 6px}
+  /* chamada */
+  .live{gap:14px}
+  .reader{padding:18px 14px}
+  .ring{width:120px;height:120px}.ring img{width:58px}
+  .av.lg{width:116px;height:116px;font-size:40px}
+  .coderow{flex-wrap:wrap}
+  .coderow .inp{flex:1 1 55%}
+  .reader>.btn{width:100%;justify-content:center}
+  /* cartão do aluno */
+  .pass{padding:18px}
+  .pass .code{font-size:27px}
+  .wbtns .btn,.wbtns .wbtn{flex:1 1 100%;justify-content:center}
+  .need{max-width:none}
+  /* entrada */
+  .gate{padding-top:22px}
+  .gatebox{width:100%}
+  .gatebox .btn.gold{width:100%;justify-content:center}
+  /* folhas sobem de baixo e ocupam a largura toda */
+  .veil{align-items:flex-end;padding:0}
+  .sheet,.sheet.wide{width:100%;max-height:92dvh;border-radius:22px 22px 0 0;border-bottom:0;padding:20px max(16px,env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));animation:up .24s ease-out}
+  .foot{flex-direction:column-reverse;gap:8px}
+  .foot .btn{width:100%;justify-content:center}
+  .foot .l{margin-right:0}
+  .checks label{padding:10px 12px;min-height:44px}
+  .checks input{width:18px;height:18px}
+  /* barra de áreas embaixo */
+  .dockwrap{padding:0}
+  .dock{width:100%;border-radius:0;border-left:0;border-right:0;border-bottom:0;justify-content:space-around;box-shadow:none;padding:6px 8px calc(6px + env(safe-area-inset-bottom));background:rgba(22,19,15,.86)}
+  .dock button{flex:1;padding:3px 0;font-size:12px}
+  .dock button .ic{width:36px;height:36px;border-radius:11px;box-shadow:none}
+  .dock button[aria-current="true"]::after{display:none}
+  .toast{bottom:calc(88px + env(safe-area-inset-bottom));width:max-content}
+}
+@keyframes up{from{transform:translateY(46px);opacity:.4}to{transform:none;opacity:1}}
+@media (hover:none){.dock button:hover{transform:none}}
+</style>
+</head>
+<body>
+<div class="menubar">
+  <img src="mark.png" alt="">
+  <b>TOCA tag</b>
+  <span id="tname" class="tname"></span>
+  <span class="sp"></span>
+  <span class="sync" id="sync"><i></i><span>Carregando</span></span>
+  <button class="who-btn" id="acct" data-act="account" hidden></button>
+  <span id="clock"></span>
+</div>
+<div class="stage">
+  <div class="window glass">
+    <div class="titlebar"><h1 id="wtitle">TOCA tag</h1></div>
+    <div class="body" id="body"></div>
+  </div>
+</div>
+<div class="dockwrap" id="dockwrap"><nav class="dock glass" id="dock" aria-label="Áreas do aplicativo"></nav></div>
+<div class="veil" id="veil"><div class="sheet glass" id="sheet" role="dialog" aria-modal="true"></div></div>
+<div class="toast glass" id="toast" role="status"></div>
+
+<script src="vendor/qrcode.js"></script>
+<script>
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const COLS=["students","classes","sessions"];
+const data={students:new Map(),classes:new Map(),sessions:new Map()};
+let users=[],tenants=[],alunoSenha={},insts=[],just={},logs=[],courses={},rules={hours:false,pMin:75,parMin:25};
+const nrules=x=>({hours:!!(x&&x.hours),unit:x&&x.unit==="t"?"t":"p",pMin:(x&&x.pMin)||75,parMin:(x&&x.parMin)||25,pT:(x&&x.pT)||60,parT:(x&&x.parT)||15}); // unit "p": % da aula; "t": tempo em sala, em minutos
+const fmtMin=m=>m<60?m+" min":(m%60?Math.floor(m/60)+" h "+(m%60)+" min":(m/60)+" h");
+const setRules=x=>{rules=nrules(x);}; // regra antiga da instituição: vale só para turmas que ainda não têm regra própria
+const rulesOf=s=>s&&s.rules?nrules(s.rules):s&&s.classId&&data.classes.get(s.classId)&&data.classes.get(s.classId).rules?nrules(data.classes.get(s.classId).rules):rules;
+const classRules=c=>c&&c.rules?nrules(c.rules):rules;
+const rulesText=R=>!R.hours?"Presença pela leitura do cartão":R.unit==="t"?"Presença pelas horas: presente com "+fmtMin(R.pT)+" em sala, parcial com "+(R.parT<=1?"qualquer permanência":fmtMin(R.parT)):"Presença pelas horas: presente com "+R.pMin+"% da aula, parcial com "+R.parMin+"%";
+const MODES={entrada:"Na entrada",saida:"Na saída",ambas:"Entrada e saída"};
+const ROLES={admin:"Administrador",secretaria:"Secretaria",professor:"Professor"};
+const state={phase:"loading",me:null,tenant:null,area:"",tab:"alunos",q:"",aq:"",sessionId:null,blip:null,typed:"",loginTab:"equipe",err:"",aluno:null,alunoKey:null,online:true,askedPw:false,fSubj:"",fPer:"all",fFrom:"",fTo:"",day:null,rep:{view:"aulas",cls:"",course:"",per:"all",from:"",to:"",min:"",q:""},lg:{q:"",type:"",by:"",per:"all",from:"",to:""},pf:{q:"",cls:"",per:"all",from:"",to:""},of:{q:"",cls:"",by:"",per:"all",from:"",to:""},flt:{aCls:"",aCourse:"",aSit:"",aOrd:"nome",tq:"",tProf:"",tMode:"",tSit:"",pq:"",pCls:"",pSit:"",sq:""}};
+/* Palavras que mudam entre faculdade e escola */
+const L=t=>(t||state.tenant||{}).type==="escola"?{ra:"Matrícula",course:"Série",kind:"Escola"}:{ra:"RA",course:"Curso",kind:"Faculdade"};
+
+/* ---------- ícones ---------- */
+const I={
+  alunos:'<path d="M16 19v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 17.5V19"/><circle cx="10" cy="8" r="3.5"/><path d="M20 19v-1.5a3.5 3.5 0 0 0-2.5-3.3M15.5 4.7a3.5 3.5 0 0 1 0 6.6"/>',
+  turmas:'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v3M16 3v3"/>',
+  relatorios:'<path d="M5 20V10M12 20V4M19 20v-7"/>',
+  logins:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20v-1.5A4.5 4.5 0 0 1 9.5 14h5a4.5 4.5 0 0 1 4.5 4.5V20"/>',
+  instituicao:'<path d="M3 10 12 4l9 6M5 10v9M19 10v9M9 19v-6h6v6M3 19h18"/>',
+  professor:'<path d="M5 9a7 7 0 0 1 14 0M8.5 9a3.5 3.5 0 0 1 7 0"/><circle cx="12" cy="9.5" r="1.2"/><rect x="6" y="13" width="12" height="8" rx="2"/>',
+  freq:'<path d="M4 19h16M7 16V9M12 16V5M17 16v-4"/>',
+  equipe:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  logs:'<path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r=".8"/><circle cx="4" cy="12" r=".8"/><circle cx="4" cy="18" r=".8"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>', nfc:'<path d="M6 8a6 6 0 0 1 0 8M10 5.5a10 10 0 0 1 0 13M14 3a14 14 0 0 1 0 18"/>'
+};
+const ico=(n,s=18)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n]}</svg>`;
+
+/* ---------- servidor ---------- */
+async function api(method,url,body){
+  let r;
+  try{r=await fetch("api/"+url,{method,headers:body?{"Content-Type":"application/json"}:{},body:body?JSON.stringify(body):undefined,cache:"no-store"});}
+  catch(e){throw new Error("Sem conexão com o servidor. Tente de novo.");}
+  let j=null;try{j=await r.json();}catch(e){}
+  if(!r.ok)throw new Error((j&&j.erro)||"Não foi possível concluir. Tente de novo.");
+  return j||{};
+}
+async function load(){
+  if(state.me.role==="admin"){tenants=(await api("GET","admin/tenants")).tenants||[];}
+  else{const j=await api("GET","data");for(const c of COLS)data[c]=new Map(Object.entries(j[c]||{}));tagIds();users=j.users||[];alunoSenha=j.alunoSenha||{};just=j.just||{};logs=j.logs||[];courses=j.courses||{};setRules(j.settings);if(j.me)state.me={...state.me,...j.me};
+  if(j.v){if(!state.v)state.v=j.v;else if(j.v!==state.v)newVersion();}}
+function newVersion(){ // o aplicativo foi atualizado no servidor: recarrega a tela quando não atrapalha
+  if(!$("#sheet").innerHTML&&!activeSession()){location.reload();return;}
+  if(!newVersion.t)newVersion.t=setInterval(()=>{if(!$("#sheet").innerHTML&&!activeSession())location.reload();},8000);
+  if(!newVersion.told){newVersion.told=true;toast("O TOCA tag foi atualizado. Recarregue a página quando terminar o que está fazendo.");}
+}
+  state.online=true;render();
+}
+let es=null;
+function connect(){
+  load().catch(e=>toast(e.message));
+  if(es)es.close();
+  try{es=new EventSource("api/events");es.onmessage=()=>load().catch(()=>{});es.onopen=()=>{const back=state.online===false;state.online=true;render();if(back)load().catch(()=>{});};es.onerror=()=>{state.online=false;render();};}catch(e){}
+}
+const chains={};
+function tagIds(){for(const [k,v] of data.sessions)if(v&&v.id!==k)Object.defineProperty(v,"id",{value:k,enumerable:false,configurable:true});}
+function save(col,id,body){
+  data[col].set(id,body);tagIds();render();
+  const k=col+"/"+id;
+  const p=(chains[k]||Promise.resolve()).catch(()=>{}).then(()=>api("PUT",k,body));
+  chains[k]=p;return p.catch(e=>{toast(e.message);load().catch(()=>{});});
+}
+function remove(col,id){
+  data[col].delete(id);render();
+  const k=col+"/"+id;
+  const p=(chains[k]||Promise.resolve()).catch(()=>{}).then(()=>api("DELETE",k));
+  chains[k]=p;return p.catch(e=>{toast(e.message);load().catch(()=>{});});
+}
+const newId=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36);
+async function boot(){
+  try{state.alunoKey=localStorage.getItem("tocatag.aluno.t")||null;}catch(e){}
+  api("GET","instituicoes").then(j=>{insts=j.nomes||[];if(state.phase==="login")render();}).catch(()=>{});
+  let r;
+  try{r=await api("GET","me");}catch(e){state.phase="login";state.err=e.message;render();return;}
+  if(r.setup){state.phase="setup";render();return;}
+  if(r.user){enter(r);return;}
+  if(r.aviso)state.err=r.aviso;
+  if(state.alunoKey){state.phase="aluno";render();loadAluno();return;}
+  state.phase="login";render();
+}
+function enter(r){
+  state.me=r.user;state.tenant=r.tenant;state.phase="app";state.err="";
+  state.area=r.user.role==="admin"?"admin":r.user.role==="secretaria"?"instituicao":"professor";
+  render();connect();
+}
+function alunoOut(msg){state.aluno=null;state.alunoKey=null;state.err=msg||"";state.loginTab="aluno";state.phase="login";try{localStorage.removeItem("tocatag.aluno.t");}catch(x){}}
+function alunoIn(j){setRules(j.settings);state.aluno=j;state.alunoKey=j.token;state.phase="aluno";state.err="";try{localStorage.setItem("tocatag.aluno.t",j.token);}catch(x){}}
+async function loadAluno(){
+  if(!state.alunoKey)return;
+  try{alunoIn(await api("POST","aluno",{token:state.alunoKey}));}
+  catch(e){if(!state.aluno||/Entre de novo/.test(e.message))alunoOut(state.aluno?"":e.message);}
+  render();
+}
+const pickerOpen=()=>{const a=document.activeElement;return !!a&&(a.type==="date"||a.tagName==="SELECT");};
+setInterval(()=>{if(state.phase==="aluno"&&!pickerOpen())loadAluno();},20000);
+async function logout(){
+  try{await api("POST","logout");}catch(e){}
+  if(es){es.close();es=null;}
+  state.me=null;state.tenant=null;state.phase="login";state.sessionId=null;state.loginTab="equipe";for(const c of COLS)data[c]=new Map();users=[];tenants=[];render();
+}
+
+/* ---------- utilidades ---------- */
+const fmtT=ts=>ts?new Date(ts).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}):"";
+const fmtD=ts=>new Date(ts).toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"short"});
+const fmtDay=ts=>ts?new Date(ts).toLocaleDateString("pt-BR"):"";
+const dayKey=ts=>{const d=new Date(ts);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
+const fmtDur=ms=>{const m=Math.round(ms/60000),hh=Math.floor(m/60),mm=m%60;return hh?(mm?hh+" h "+mm+" min":hh+" h"):mm+" min";};
+const normUid=s=>String(s||"").toUpperCase().replace(/[^0-9A-Z]/g,"");
+const initials=n=>String(n||"?").trim().split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"?";
+function avatar(st,cls=""){
+  const ok=st&&typeof st.photo==="string"&&st.photo.startsWith("data:image/");
+  return ok?`<img class="av ${cls}" src="${esc(st.photo)}" alt="Foto de ${esc(st.name)}">`:`<span class="av ${cls}" aria-hidden="true">${esc(initials(st&&st.name))}</span>`;
+}
+const sorted=(m,f)=>[...m.entries()].map(([id,v])=>({id,...v})).sort(f);
+const students=()=>sorted(data.students,(a,b)=>String(a.name).localeCompare(String(b.name),"pt-BR"));
+const classes=()=>sorted(data.classes,(a,b)=>String(a.name).localeCompare(String(b.name),"pt-BR"));
+const sessions=()=>sorted(data.sessions,(a,b)=>(b.startedAt||0)-(a.startedAt||0));
+const roster=cid=>students().filter(s=>Array.isArray(s.classIds)&&s.classIds.includes(cid));
+const myClasses=()=>state.me.role==="professor"?classes().filter(c=>!c.professorId||c.professorId===state.me.id):classes();
+function statusOfRec(mode,r){
+  if(!r)return{k:"bad",t:"Ausente"};
+  if(mode==="ambas"){if(r.in&&r.out)return{k:"ok",t:"Presente"};return{k:"wait",t:r.in?"Falta a saída":"Falta a entrada"};}
+  if(mode==="saida")return r.out?{k:"ok",t:"Presente"}:{k:"bad",t:"Ausente"};
+  return r.in?{k:"ok",t:"Presente"}:{k:"bad",t:"Ausente"};
+}
+/* Avalia um aluno em uma aula: situação, tempo em sala (ms) e duração prevista da aula (dur).
+   Regra por horas (opcional, definida pela secretaria): vale para chamadas encerradas e compara o tempo em sala com a duração da aula. */
+const CAP=6*3600000;
+function evalRec(s,r,jst){
+  const e=evalRaw(s,r);
+  return jst&&e.k!=="ok"?{k:"just",t:"Justificada",ms:e.ms,dur:0,just:true}:e; // falta justificada: não conta como falta nem entra nas horas previstas
+}
+function evalRaw(s,r){
+  const live=statusOfRec(s.mode,r),dur=s.endedAt?Math.min(Math.max(0,s.endedAt-s.startedAt),CAP):0;
+  let ini=null,fim=null;
+  if(r){ini=r.in||(s.mode==="saida"&&r.out?s.startedAt:null);fim=r.out||(s.mode==="entrada"&&r.in?s.endedAt:null);}
+  let ms=0;if(ini&&fim&&s.endedAt){const a=Math.max(ini,s.startedAt),b=Math.min(fim,s.endedAt);ms=Math.max(0,Math.min(b-a,CAP));}
+  const R=rulesOf(s);
+  if(!R.hours||!s.endedAt)return {k:live.k,t:live.t,ms:live.k==="ok"?ms:0,dur};
+  if(!r)return {k:"bad",t:"Ausente",ms:0,dur,hrs:true};
+  if(!ini||!fim)return {k:"wait",t:ini?"Parcial, sem saída":"Parcial, sem entrada",ms:0,dur,par:true,hrs:true};
+  const pct=dur?100*ms/dur:0;
+  if(R.unit==="t"?ms>=R.pT*60000:pct>=R.pMin)return {k:"ok",t:"Presente",ms,dur,hrs:true};
+  if(R.unit==="t"?ms>=R.parT*60000:pct>=R.parMin)return {k:"wait",t:"Parcial",ms,dur,par:true,hrs:true};
+  return {k:"bad",t:"Ausente",ms,dur,hrs:true};
+}
+const fmtSaldo=ms=>{const m=Math.round(ms/60000);return m===0?"0 h":(m<0?"−":"+")+fmtDur(Math.abs(m)*60000);};
+const anyHours=()=>state.phase==="aluno"?((state.aluno&&state.aluno.sessions)||[]).some(s=>rulesOf(s).hours):[...data.classes.values()].some(c=>classRules(c).hours);
+const statusOf=(se,sid)=>evalRec(se,se.records&&se.records[sid],se.id?just[se.id+"/"+sid]:null);
+const presentCount=(se,rs)=>rs.filter(s=>statusOf(se,s.id).k==="ok").length;
+let toastT;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),3800);}
+function beep(ok){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;beep.c=beep.c||new C();const c=beep.c,o=c.createOscillator(),g=c.createGain();o.frequency.value=ok?1040:300;g.gain.value=.07;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+(ok?.11:.28));}catch(e){}}
+function readPhoto(file){return new Promise((res,rej)=>{const img=new Image(),u=URL.createObjectURL(file);img.onload=()=>{const W=240,H=320,c=document.createElement("canvas");c.width=W;c.height=H;let sw=img.width,sh=img.width*4/3;if(sh>img.height){sh=img.height;sw=img.height*3/4;}c.getContext("2d").drawImage(img,(img.width-sw)/2,(img.height-sh)/2,sw,sh,0,0,W,H);URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",.75));};img.onerror=()=>rej(new Error("img"));img.src=u;});}
+/* NFC do próprio celular (Web NFC): existe no Chrome para Android, em endereço https. */
+let nfc=null;
+async function nfcScan(onUid){
+  if(!("NDEFReader" in window)){toast("A leitura por NFC do celular funciona no Chrome para Android, pelo tocatag.net. No iPhone, use o QR code, o leitor USB ou a presença manual.");return;}
+  if(nfc){nfc.cb=onUid;toast("O NFC já está ativo. Encoste o cartão na parte de trás do celular.");return;}
+  try{
+    const r=new NDEFReader();await r.scan();nfc={cb:onUid};
+    r.onreading=e=>{if(nfc&&e.serialNumber)nfc.cb(e.serialNumber);else toast("Este cartão não informou o número. Tente outro cartão.");};
+    r.onreadingerror=()=>toast("Não deu para ler este cartão. Encoste de novo e segure um instante.");
+    state.nfcOn=true;render();toast("NFC ativo. Encoste o cartão na parte de trás do celular.");
+  }catch(e){toast(e&&e.name==="NotAllowedError"?"Permita o uso do NFC para este site e toque no botão de novo.":"Não foi possível ativar o NFC. Confira se o NFC do celular está ligado.");}
+}
+/* O mesmo cartão sai em formatos diferentes conforme o leitor: hexadecimal (celular), hexadecimal invertido ou decimal (leitores USB). */
+function uidForms(raw){
+  const u=normUid(raw),f=new Set();if(!u)return f;f.add(u);
+  const add=hex=>{if(!hex||hex.length%2||hex.length>20)return;const rev=hex.match(/../g).reverse().join("");
+    for(const x of [hex,rev]){f.add(x);try{const d=BigInt("0x"+x).toString();f.add(d);f.add(d.padStart(10,"0"));}catch(e){}}};
+  if(/^[0-9A-F]+$/.test(u))add(u);
+  if(/^[0-9]+$/.test(u)){f.add(u.replace(/^0+/,"")||"0");try{let hx=BigInt(u).toString(16).toUpperCase();if(hx.length%2)hx="0"+hx;add(hx);add(hx.padStart(8,"0"));}catch(e){}}
+  return f;
+}
+function sameCard(stored,readForms){const s=normUid(stored);if(!s)return false;if(readForms.has(s))return true;for(const x of uidForms(s))if(readForms.has(x))return true;return false;}
+const suggestCode=n=>(String(n).normalize("NFD").replace(/[^A-Za-z ]/g,"").split(/\s+/).filter(w=>w.length>2).map(w=>w[0]).join("").toUpperCase().slice(0,5)||"INST")+String(Math.floor(100+Math.random()*900));
+
+/* ---------- chamada ---------- */
+function activeSession(){const s=state.sessionId&&data.sessions.get(state.sessionId);return s&&!s.endedAt?{id:state.sessionId,...s}:null;}
+function setBlip(b){state.blip={...b,at:Date.now()};beep(b.kind==="ok");clearTimeout(setBlip.t);setBlip.t=setTimeout(()=>{if(state.blip)state.blip.idle=true;render();},6000);render();}
+function mark(st,manual,sure){
+  const se=activeSession();if(!se)return;
+  if(se.confirm&&!manual&&!sure){ // chamada com conferência: a leitura só vale depois que o professor confirma a foto
+    state.blip={student:st,msg:"Confira a foto e confirme a presença.",kind:"ask",at:Date.now()};beep(true);clearTimeout(setBlip.t);render();return;}
+  const now=Date.now(),recs={...(se.records||{})},r={...(recs[st.id]||{})};let msg,kind="ok";
+  if(se.mode==="entrada"){if(r.in){msg="Entrada já registrada às "+fmtT(r.in);kind="dup";}else{r.in=now;msg="Entrada registrada às "+fmtT(now);}}
+  else if(se.mode==="saida"){if(r.out){msg="Saída já registrada às "+fmtT(r.out);kind="dup";}else{r.out=now;msg="Saída registrada às "+fmtT(now);}}
+  else{if(!r.in){r.in=now;msg="Entrada registrada às "+fmtT(now);}
+    else if(!r.out){if(!manual&&now-r.in<4000){msg="Entrada registrada agora mesmo. Para a saída, aproxime o cartão de novo daqui a alguns segundos.";kind="dup";}else{r.out=now;msg="Saída registrada às "+fmtT(now);}}
+    else{msg="Entrada e saída já registradas";kind="dup";}}
+  if(kind==="ok"){if(manual)r.manual=true;recs[st.id]=r;const {id,...body}=se;save("sessions",id,{...body,records:recs});}
+  setBlip({student:st,msg,kind});
+}
+function unmark(sid){const se=activeSession();if(!se)return;const recs={...(se.records||{})};delete recs[sid];const {id,...body}=se;save("sessions",id,{...body,records:recs});}
+function handleUid(raw){
+  const uid=normUid(raw),se=activeSession();if(!uid||!se)return;
+  const forms=uidForms(uid),st=students().find(s=>sameCard(s.cardUid,forms));
+  if(!st)return setBlip({kind:"err",msg:"Cartão não cadastrado",detail:"Código lido: "+uid});
+  if(!(st.classIds||[]).includes(se.classId))return setBlip({student:st,kind:"err",msg:"Não está matriculado nesta turma"});
+  mark(st,false);
+}
+function handleCode(code){
+  const se=activeSession();if(!se)return;
+  const st=roster(se.classId).find(s=>s.cardCode&&s.cardCode===code);
+  if(!st)return setBlip({kind:"err",msg:"Código não encontrado nesta turma",detail:"Peça ao aluno o código que aparece no cartão digital dele."});
+  mark(st,false);
+}
+
+/* QR code do aluno: TOCA1.<aluno>.<chave>. É fixo e só muda quando o aluno gera um novo. */
+function handleQr(text){
+  const se=activeSession();if(!se)return;
+  const m=/^TOCA(1)\.([A-Za-z0-9_-]+)\.(.+)$/.exec(String(text).trim());
+  if(!m)return setBlip({kind:"err",msg:"Este QR code não é do TOCA tag"});
+  const raw=data.students.get(m[2]);
+  if(!raw)return setBlip({kind:"err",msg:"Aluno não encontrado nesta instituição"});
+  const st={id:m[2],...raw};
+  if(!(st.classIds||[]).includes(se.classId))return setBlip({student:st,kind:"err",msg:"Não está matriculado nesta turma"});
+  if(!st.walletKey||st.walletKey!==m[3])return setBlip({student:st,kind:"err",msg:"QR code antigo ou inválido",detail:"Peça ao aluno para abrir o cartão de novo."});
+  mark(st,false);
+}
+let scan=null;
+function stopScan(){if(scan){scan.on=false;try{scan.stream.getTracks().forEach(t=>t.stop());}catch(e){}scan=null;}}
+const loadScript=src=>new Promise((ok,bad)=>{const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=bad;document.head.appendChild(s);});
+async function scanSheet(){
+  openSheet(`<h2>Ler QR code</h2><p class="sub">Aponte a câmera para o QR code do cartão digital ou da Carteira do aluno.</p><div class="cam"><video id="cam" playsinline muted></video></div><div class="cam-msg" id="cam-msg" role="status"></div><div class="foot"><button class="btn gold" data-act="close">Fechar</button></div>`);
+  const say=(t,k)=>{const e=$("#cam-msg");if(e){e.textContent=t;e.className="cam-msg "+(k||"");}};
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){say("A câmera só funciona em endereço seguro (https). Abra o aplicativo pelo tocatag.net.","err");return;}
+  let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false});}
+  catch(e){say("Não foi possível abrir a câmera. Permita o acesso à câmera no navegador e tente de novo.","err");return;}
+  const v=$("#cam");if(!v){stream.getTracks().forEach(t=>t.stop());return;}
+  scan={stream,on:true};v.srcObject=stream;try{await v.play();}catch(e){}
+  let det=null;if("BarcodeDetector" in window){try{det=new BarcodeDetector({formats:["qr_code"]});}catch(e){}}
+  if(!det&&!window.jsQR){try{await loadScript("vendor/jsQR.js");}catch(e){say("Não foi possível carregar o leitor de QR code.","err");return;}}
+  const cv=document.createElement("canvas"),cx=cv.getContext("2d",{willReadFrequently:true});let last="",lastAt=0;
+  const loop=async()=>{
+    if(!scan||!scan.on)return;
+    if(v.readyState>=2&&v.videoWidth){let text="";
+      try{if(det){const r=await det.detect(v);if(r[0])text=r[0].rawValue;}
+        else{const s=Math.min(1,640/v.videoWidth);cv.width=Math.round(v.videoWidth*s);cv.height=Math.round(v.videoHeight*s);cx.drawImage(v,0,0,cv.width,cv.height);const r=jsQR(cx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height);if(r)text=r.data;}}catch(e){}
+      if(text&&(text!==last||Date.now()-lastAt>4000)){last=text;lastAt=Date.now();handleQr(text);const b=state.blip;if(b)say((b.student?b.student.name+": ":"")+b.msg,b.kind);}}
+    setTimeout(loop,250);};
+  loop();
+}
+const qrSvg=(text,cell)=>{try{const g=qrcode(0,"M");g.addData(text);g.make();return g.createSvgTag({cellSize:cell,margin:0,scalable:true});}catch(e){return "";}};
+/* QR code como imagem PNG, com fundo branco e margem: dá para salvar em Fotos segurando o dedo. */
+function qrPng(text){
+  try{const g=qrcode(0,"M");g.addData(text);g.make();const n=g.getModuleCount(),cell=16,pad=cell*4,S=n*cell+pad*2,c=document.createElement("canvas");c.width=c.height=S;
+    const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,S,S);x.fillStyle="#000";
+    for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(g.isDark(r,k))x.fillRect(pad+k*cell,pad+r*cell,cell,cell);
+    return c.toDataURL("image/png");}catch(e){return "";}
+}
+async function newCard(){
+  try{const r=await api("POST","wallet/qr",{token:state.alunoKey,novo:true});if(state.aluno)state.aluno.card={code:r.code,qr:r.payload};render();return r;}
+  catch(e){toast(e.message);return null;}
+}
+async function walletQrSheet(novo){
+  if(novo){if(!await newCard())return;}
+  const a=state.aluno;if(!a||!a.card)return;const png=qrPng(a.card.qr);
+  openSheet(`<h2>Guardar na Carteira do celular</h2><p class="sub">Seu QR code e seu número são fixos, então servem para criar um cartão na Carteira do celular. Número do cartão: <b>${esc(a.card.code)}</b></p>
+  <div class="qrbig"><img src="${png}" alt="QR code fixo do seu cartão"></div>
+  <ol class="steps"><li>Segure o dedo sobre o QR code e toque em "Salvar em Fotos".</li><li>No iPhone, abra a Carteira, toque em +, crie um tíquete e toque em "Adicionar Código". Aponte a câmera para este QR code aberto em outra tela (computador ou outro celular).</li><li>Em alguns iPhones, abrir a imagem salva no app Fotos e tocar no botão de informações (i) já mostra a opção de adicionar à Carteira.</li><li>No Android, abra a Carteira do Google e adicione um cartão a partir da foto.</li><li>Na aula, abra o cartão na Carteira e mostre o QR code para a câmera do professor.</li></ol>
+  <p class="note">Este QR code é pessoal. Quem tiver uma foto dele consegue registrar presença no seu nome, então não envie a ninguém. Se achar que alguém copiou, gere um novo: o QR code e o número antigos param de funcionar e você refaz o cartão na Carteira.</p>
+  <div class="foot"><button class="btn l" data-act="walletqrnew">Gerar novo código e QR code</button><button class="btn gold" data-act="close">Fechar</button></div>`);
+  if(novo)toast("Novo código e QR code gerados. Os antigos não funcionam mais.");
+}
+async function addWallet(kind){
+  const k=state.alunoKey;if(!k)return;
+  if(kind==="google"){try{const r=await api("POST","wallet/google",{token:k});location.href=r.url;}catch(e){toast(e.message);}return;}
+  const f=document.createElement("form");f.method="POST";f.action="api/wallet/apple";f.style.display="none";
+  const i=document.createElement("input");i.name="token";i.value=k;f.appendChild(i);
+  document.body.appendChild(f);f.submit();f.remove();
+}
+
+/* ---------- telas de entrada ---------- */
+function viewSetup(){
+  return `<section class="main gate" id="main"><form class="gatebox" id="setupform" novalidate><img src="logo.png" alt="TOCA, seu lugar de conexão" class="gatelogo"><h2>Criar conta de administrador</h2><p class="sub">Primeiro uso. Esta é a conta da TOCA, que cadastra as faculdades e escolas.</p>
+  <div class="field"><label for="su-name">Seu nome</label><input class="inp" id="su-name" autocomplete="name"></div>
+  <div class="field"><label for="su-login">Login</label><input class="inp" id="su-login" autocomplete="username"></div>
+  <div class="field"><label for="su-pw">Senha (mínimo de 6 caracteres)</label><input class="inp" id="su-pw" type="password" autocomplete="new-password"></div>
+  <div class="err" id="gate-err">${esc(state.err)}</div><button class="btn gold">Criar conta e entrar</button></form></section>`;
+}
+function viewLogin(){
+  const eq=state.loginTab==="equipe";
+  return `<section class="main gate" id="main"><div class="gatebox"><img src="logo.png" alt="TOCA, seu lugar de conexão" class="gatelogo">
+  <div class="seg" role="group" aria-label="Tipo de acesso"><button type="button" data-act="logintab" data-v="equipe" aria-pressed="${eq}">Equipe</button><button type="button" data-act="logintab" data-v="aluno" aria-pressed="${!eq}">Aluno</button></div>
+  ${eq?`<form id="loginform" class="gateform" novalidate><div class="field"><label for="lg-login">Login</label><input class="inp" id="lg-login" autocomplete="username"></div><div class="field"><label for="lg-pw">Senha</label><input class="inp" id="lg-pw" type="password" autocomplete="current-password"></div><div class="err" id="gate-err">${esc(state.err)}</div><button class="btn gold">Entrar</button><p class="note">Secretaria e professores usam o login criado pela instituição.</p></form>`
+  :`<form id="alunoform" class="gateform" novalidate><div class="field"><label for="al-inst">Nome da instituição</label><input class="inp" id="al-inst" list="instlist" autocomplete="off" placeholder="Comece a digitar e escolha na lista"><datalist id="instlist">${insts.map(n=>`<option value="${esc(n)}"></option>`).join("")}</datalist></div><div class="field"><label for="al-ra">RA ou matrícula</label><input class="inp" id="al-ra" autocomplete="off"></div><div class="field"><label for="al-pw">Senha</label><input class="inp" id="al-pw" type="password" autocomplete="current-password"></div><div class="err" id="gate-err">${esc(state.err)}</div><button class="btn gold">Abrir meu cartão</button><p class="note">Primeiro acesso? Deixe a senha em branco. Você cria a sua logo depois de entrar.</p><button type="button" class="linkbtn" data-act="forgot">Esqueci minha senha</button></form>`}
+  </div></section>`;
+}
+
+/* ---------- painel do administrador ---------- */
+function viewAdmin(){
+  const q=state.aq.trim().toLowerCase(),list=tenants.filter(t=>!q||[t.name,t.code].some(v=>String(v).toLowerCase().includes(q)));
+  const act=tenants.filter(t=>t.active).length,al=tenants.reduce((a,t)=>a+t.students,0),ch=tenants.reduce((a,t)=>a+t.sessions,0);
+  return `<section class="main" id="main"><div class="head"><h2>Instituições</h2><input class="inp search" id="aq" type="search" placeholder="Buscar por nome" value="${esc(state.aq)}" aria-label="Buscar instituição"><button class="btn gold" data-act="tenant">${ico("plus",16)}Cadastrar instituição</button></div>
+  <div class="stats"><div><b>${tenants.length}</b><span>instituições</span></div><div><b>${act}</b><span>com acesso ativo</span></div><div><b>${al}</b><span>alunos cadastrados</span></div><div><b>${ch}</b><span>chamadas feitas</span></div></div>
+  <div class="card rows">${list.length?list.map(t=>`<button class="row" data-act="tenant" data-v="${esc(t.id)}"><span class="av" aria-hidden="true">${esc(initials(t.name))}</span><span class="who"><b>${esc(t.name)}</b><span>${L(t).kind}, desde ${fmtDay(t.createdAt)}</span></span><span class="nums">${t.students} alunos<br>${t.classes} turmas, ${t.professors} professores</span>${t.active?`<span class="chip ok">Ativa</span>`:`<span class="chip bad">Suspensa</span>`}</button>`).join(""):`<div class="empty"><b>${q?"Nenhuma instituição encontrada":"Nenhuma instituição cadastrada"}</b>${q?"Confira o nome ou o código.":"Cadastre a primeira faculdade ou escola. Ela recebe um login de secretaria."}</div>`}</div></section>`;
+}
+function tenantSheet(id){
+  const t=id&&tenants.find(x=>x.id===id);
+  if(!t){
+    openSheet(`<h2>Cadastrar instituição</h2><p class="sub">Os alunos entram pelo nome da instituição, então escreva o nome como eles conhecem. Ela recebe o primeiro login de secretaria.</p>
+    <form id="tf" class="form" novalidate>
+      <div class="field full"><label for="t-name">Nome da instituição</label><input class="inp" id="t-name" autofocus autocomplete="off"></div>
+      <div class="field full"><label for="t-type">Tipo</label><select class="inp" id="t-type"><option value="faculdade">Faculdade</option><option value="escola">Escola</option></select></div>
+      <div class="field full"><label for="t-uname">Nome do responsável na secretaria</label><input class="inp" id="t-uname" autocomplete="off"></div>
+      <div class="field"><label for="t-login">Login da secretaria</label><input class="inp" id="t-login" autocomplete="off"></div>
+      <div class="field"><label for="t-pw">Senha inicial</label><input class="inp" id="t-pw" autocomplete="off"></div>
+      <div class="full err" id="t-err"></div>
+      <div class="full foot"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn gold">Cadastrar instituição</button></div>
+    </form>`);
+    $("#tf").onsubmit=async e=>{e.preventDefault();
+      try{await api("POST","admin/tenants",{name:$("#t-name").value,type:$("#t-type").value,userName:$("#t-uname").value,login:$("#t-login").value,password:$("#t-pw").value});closeSheet();toast("Instituição cadastrada");load().catch(()=>{});}
+      catch(x){$("#t-err").textContent=x.message;}};
+    return;
+  }
+  openSheet(`<h2>${esc(t.name)}</h2><p class="sub">${t.students} alunos, ${t.classes} turmas, ${t.sessions} chamadas, ${t.professors} professores.</p>
+  <form id="tf" class="form" novalidate>
+    <div class="field full"><label for="t-name">Nome da instituição</label><input class="inp" id="t-name" value="${esc(t.name)}" autocomplete="off"></div>
+    <div class="field"><label for="t-type">Tipo</label><select class="inp" id="t-type"><option value="faculdade" ${t.type!=="escola"?"selected":""}>Faculdade</option><option value="escola" ${t.type==="escola"?"selected":""}>Escola</option></select></div>
+    <div class="field"><label for="t-active">Acesso</label><select class="inp" id="t-active"><option value="1" ${t.active?"selected":""}>Ativo</option><option value="0" ${t.active?"":"selected"}>Suspenso</option></select></div>
+    <div class="full"><div class="lbl" style="margin-bottom:6px">Logins da secretaria</div>${t.staff.map(u=>`<div class="pwrow"><span><b>${esc(u.name)}</b> (${esc(u.login)})</span><input class="inp" data-pw="${esc(u.id)}" placeholder="Nova senha (opcional)" aria-label="Nova senha para ${esc(u.login)}" autocomplete="off"></div>`).join("")||`<span class="lbl">Nenhum login de secretaria.</span>`}</div>
+    <div class="full err" id="t-err"></div>
+    <div class="full foot"><button type="button" class="btn danger l" id="t-del">Excluir instituição</button><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn gold">Salvar</button></div>
+  </form>`);
+  $("#t-del").onclick=()=>confirmSheet("Excluir "+t.name+"?","Todos os alunos, turmas, chamadas e logins desta instituição serão apagados. Não dá para desfazer.","Excluir instituição",async()=>{try{await api("DELETE","admin/tenants/"+id);toast("Instituição excluída");}catch(x){toast(x.message);}load().catch(()=>{});});
+  $("#tf").onsubmit=async e=>{e.preventDefault();
+    try{await api("PUT","admin/tenants/"+id,{name:$("#t-name").value,type:$("#t-type").value,active:$("#t-active").value==="1"});
+      for(const i of document.querySelectorAll("#tf [data-pw]"))if(i.value)await api("PUT","admin/users/"+i.dataset.pw,{password:i.value});
+      closeSheet();toast("Instituição salva");load().catch(()=>{});}
+    catch(x){$("#t-err").textContent=x.message;}};
+}
+
+/* ---------- instituição ---------- */
+const courseNames=()=>Object.values(courses).map(c=>c.name).sort((a,b)=>a.localeCompare(b,"pt-BR"));
+const TABN={alunos:"Alunos",turmas:"Turmas",freq:"Chamadas e relatórios",logins:"Professores",equipe:"Secretaria",logs:"Registro"};
+const can=tab=>state.me&&state.me.role==="secretaria"?((state.me.perms||{})[tab]||"edit"):"none";
+const LOGT={acesso:"Acessos",aluno:"Alunos",turma:"Turmas",curso:"Cursos e séries",chamada:"Chamadas",presenca:"Presenças",horario:"Correções de horário",justificativa:"Justificativas",professor:"Professores",equipe:"Secretaria e permissões"};
+const ROLEN={secretaria:"Secretaria",professor:"Professor",aluno:"Aluno",sistema:"Sistema"};
+function logRows(){
+  const g=state.lg,[from,to]=rangeOf(g.per,g.from,g.to),q=norm(g.q.trim());
+  return logs.filter(l=>(!g.type||l.type===g.type)&&(!g.by||l.by===g.by)&&(l.at||0)>=from&&(l.at||0)<=to).map(l=>({l,text:l.text||logText(l,false)})).filter(x=>!q||[x.text,x.l.by,x.l.subject,x.l.studentName,x.l.className].some(v=>norm(v).includes(q)));
+}
+const logLine=x=>[new Date(x.l.at).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}),x.l.by||"",ROLEN[x.l.byRole]||"",LOGT[x.l.type]||x.l.type,x.text];
+function viewLogs(){
+  const g=state.lg,rows=logRows(),o=(v,l,cur)=>`<option value="${esc(v)}" ${String(cur)===String(v)?"selected":""}>${esc(l)}</option>`,bys=[...new Set(logs.map(l=>l.by).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR")),on=g.q||g.type||g.by||g.per!=="all";
+  return `<div class="head"><h2>Registro</h2><span class="acts noprint"><button class="btn" data-act="logcopy">Copiar</button><button class="btn" data-act="logcsv">Baixar planilha</button></span></div>
+  <p class="sub">Tudo o que a secretaria, os professores e os alunos fazem no sistema fica anotado aqui, com quem fez e quando. O registro não pode ser editado nem apagado.</p>
+  <div class="filters f3 noprint">
+    <div class="field"><label for="lg-q">Buscar</label><input class="inp" id="lg-q" type="search" placeholder="Nome, turma ou texto" value="${esc(g.q)}"></div>
+    <div class="field"><label for="lg-type">Tipo</label><select class="inp" id="lg-type">${o("","Todos",g.type)}${Object.entries(LOGT).map(([k,n])=>o(k,n,g.type)).join("")}</select></div>
+    <div class="field"><label for="lg-by">Quem fez</label><select class="inp" id="lg-by">${o("","Todos",g.by)}${bys.map(b=>o(b,b,g.by)).join("")}</select></div>
+    <div class="field"><label for="lg-per">Período</label><select class="inp" id="lg-per">${PERIODS.map(([k,n])=>o(k,n,g.per)).join("")}</select></div>
+    ${g.per==="custom"?`<div class="field"><label for="lg-from">De</label><input class="inp" type="date" id="lg-from" value="${esc(g.from)}" max="${dayKey(Date.now())}"></div><div class="field"><label for="lg-to">Até</label><input class="inp" type="date" id="lg-to" value="${esc(g.to)}" max="${dayKey(Date.now())}"></div>`:""}
+  </div>
+  <p class="fcount noprint">${on?rows.length+" de "+logs.length:logs.length} registros${on?`<button class="btn sm" data-act="logclear">Limpar filtros</button>`:""}</p>
+  ${rows.length?`<div class="card tbl"><table class="rep"><thead><tr><th>Quando</th><th>Quem fez</th><th>Perfil</th><th>Tipo</th><th>O que foi feito</th></tr></thead><tbody>${rows.slice(0,400).map(x=>`<tr>${logLine(x).map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${rows.length>400?`<p class="note">Mostrando os 400 registros mais recentes deste filtro. Use os filtros para chegar aos mais antigos, ou baixe a planilha, que traz todos os ${rows.length}.</p>`:""}`
+    :`<div class="card empty"><b>${logs.length?"Nada neste filtro":"Nenhum registro ainda"}</b>${logs.length?"Troque a busca ou os filtros.":"As ações passam a aparecer aqui conforme o sistema é usado."}</div>`}`;
+}
+function logExport(kind){
+  const rows=logRows().map(logLine),head=["Quando","Quem fez","Perfil","Tipo","O que foi feito"];if(!rows.length){toast("Não há linhas neste filtro.");return;}
+  if(kind==="copy"){navigator.clipboard.writeText([head,...rows].map(r=>r.join("\t")).join("\n")).then(()=>toast("Copiado. Cole no Excel ou no Google Planilhas."),()=>toast("Não foi possível copiar neste navegador."));return;}
+  const q=c=>'"'+String(c).replace(/"/g,'""')+'"',csv="\ufeff"+[head,...rows].map(r=>r.map(q).join(";")).join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download="registro-"+dayKey(Date.now())+".csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+function viewInst(){
+  const lb=L(),tabs=[["alunos","Alunos",data.students.size],["turmas","Turmas",data.classes.size],["freq","Chamadas e relatórios",data.sessions.size],["logins","Professores",users.filter(u=>u.role==="professor").length],["equipe","Secretaria",users.filter(u=>u.role==="secretaria").length],["logs","Registro",""]].filter(t=>can(t[0])!=="none");
+  if(!tabs.some(t=>t[0]===state.tab))state.tab=tabs.length?tabs[0][0]:"";
+  const side=`<aside class="side"><div class="brand"><img src="logo.png" alt="TOCA, seu lugar de conexão"></div>${tabs.map(([k,l,n])=>`<button data-act="tab" data-v="${k}" aria-current="${state.tab===k}">${ico(k)}${l}<span class="n">${n}</span></button>`).join("")}<div class="codebox">Os alunos entram com o nome<b>${esc(state.tenant.name)}</b></div></aside>`;
+  let main="";
+  const F=state.flt,fo=(v,l,cur)=>`<option value="${esc(v)}" ${String(cur)===String(v)?"selected":""}>${esc(l)}</option>`,has=(q,...vs)=>!q||vs.some(v=>norm(v).includes(q));
+  const sel=(k,label,opts)=>`<div class="field"><label for="x-${k}">${label}</label><select class="inp" id="x-${k}" data-f="${k}">${opts.map(([v,l])=>fo(v,l,F[k])).join("")}</select></div>`;
+  const count=(n,tot,word,keys)=>{const on=keys.some(k=>k==="q"?state.q:(k==="aOrd"?false:F[k]));return `<p class="fcount noprint">${on?`${n} de ${tot} ${word}`:`${tot} ${word}`}${on?`<button class="btn sm" data-act="fclear" data-v="${keys.join(",")}">Limpar filtros</button>`:""}</p>`;};
+  const none=`<div class="empty"><b>Nada neste filtro</b>Troque a busca ou os filtros, ou toque em Limpar filtros.</div>`;
+  if(state.tab==="alunos"){
+    const q=norm(state.q.trim()),cl=data.classes,all=students(),cnames=[...new Set([...courseNames(),...all.map(s=>String(s.course||"").trim()).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,"pt-BR")),plural=lb.course==="Série"?"Séries":"Cursos";
+    const sit={semfoto:s=>!s.photo,semcartao:s=>!s.cardUid,comcartao:s=>!!s.cardUid,semsenha:s=>!alunoSenha[s.id],semturma:s=>!(s.classIds||[]).some(c=>cl.has(c))}[F.aSit];
+    const list=all.filter(s=>has(q,s.name,s.ra,s.course,s.cardUid)&&(!F.aCls||(s.classIds||[]).includes(F.aCls))&&(!F.aCourse||String(s.course||"").trim()===F.aCourse)&&(!sit||sit(s)));
+    if(F.aOrd==="ra")list.sort((a,b)=>String(a.ra||"").localeCompare(String(b.ra||""),"pt-BR",{numeric:true}));
+    else if(F.aOrd==="novo")list.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    main=`<div class="head"><h2>Alunos e cartões</h2><input class="inp search" id="q" type="search" placeholder="Buscar por nome, ${lb.ra.toLowerCase()} ou cartão" value="${esc(state.q)}" aria-label="Buscar aluno"><button class="btn" data-act="courses">${plural}</button><button class="btn gold" data-act="student">${ico("plus",16)}Cadastrar aluno</button></div>
+    ${all.length?`<div class="filters f3 noprint">${sel("aCls","Turma",[["","Todas"],...classes().map(c=>[c.id,c.name])])}${sel("aCourse",lb.course,[["","Todos"],...cnames.map(c=>[c,c])])}${sel("aSit","Situação",[["","Todas"],["semfoto","Sem foto"],["semcartao","Sem cartão"],["comcartao","Com cartão"],["semsenha","Sem senha criada"],["semturma","Sem turma"]])}${sel("aOrd","Ordenar por",[["nome","Nome"],["ra",lb.ra],["novo","Alterados por último"]])}</div>${count(list.length,all.length,"alunos",["q","aCls","aCourse","aSit"])}`:""}
+    <div class="card rows">${list.length?list.map(s=>{const cn=(s.classIds||[]).filter(c=>cl.has(c)).map(c=>esc(cl.get(c).name)).join(", ");return `<button class="row" data-act="student" data-v="${esc(s.id)}">${avatar(s)}<span class="who"><b>${esc(s.name)}</b><span>${lb.ra} ${esc(s.ra)}${s.course?", "+esc(s.course):""}${cn?", "+cn:""}</span></span>${s.photo?"":`<span class="chip wait">Sem foto</span>`}${s.cardUid?`<span class="chip ok">Cartão ${esc(s.cardUid)}</span>`:`<span class="chip wait">Sem cartão</span>`}</button>`;}).join(""):all.length?none:`<div class="empty"><b>Nenhum aluno cadastrado</b>Cadastre o primeiro aluno para começar.</div>`}</div>`;
+  }else if(state.tab==="turmas"){
+    const all=classes(),q=norm(F.tq.trim()),profs=[...new Set(all.map(c=>String(c.professor||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+    const cs=all.filter(c=>has(q,c.name,c.professor,c.room)&&(!F.tProf||(F.tProf==="-"?!c.professor:String(c.professor||"").trim()===F.tProf))&&(!F.tMode||(c.mode||"entrada")===F.tMode)&&(!F.tSit||(F.tSit==="vazia"?!roster(c.id).length:roster(c.id).length>0)));
+    main=`<div class="head"><h2>Turmas</h2><input class="inp search" id="x-tq" data-f="tq" type="search" placeholder="Buscar por turma, professor ou sala" value="${esc(F.tq)}" aria-label="Buscar turma"><button class="btn gold" data-act="class">${ico("plus",16)}Criar turma</button></div>
+    ${all.length?`<div class="filters f3 noprint">${sel("tProf","Professor",[["","Todos"],["-","Sem professor definido"],...profs.map(p=>[p,p])])}${sel("tMode","Leitura",[["","Todas"],...Object.entries(MODES)])}${sel("tSit","Alunos",[["","Todas"],["com","Com alunos"],["vazia","Sem alunos"]])}</div>${count(cs.length,all.length,"turmas",["tq","tProf","tMode","tSit"])}`:""}
+    ${cs.length?`<div class="grid">${cs.map(c=>`<div class="card tile"><h3>${esc(c.name)}</h3><p>${esc(c.professor||"Qualquer professor")}${c.room?", "+esc(c.room):""}</p><p>${roster(c.id).length} alunos, leitura ${esc((MODES[c.mode]||MODES.entrada).toLowerCase())}</p><p>${esc(rulesText(classRules(c)))}</p><p>${c.profEdit?"O professor pode mudar a leitura e a regra":"Definido pela secretaria"}</p><div class="tileacts"><button class="btn sm" data-act="class" data-v="${esc(c.id)}">Editar turma</button></div></div>`).join("")}</div>`:all.length?`<div class="card">${none}</div>`:`<div class="card empty"><b>Nenhuma turma criada</b>Crie uma turma e depois matricule os alunos no cadastro de cada um.</div>`}`;
+  }else if(state.tab==="freq"){
+    main=viewRep();
+  }else if(state.tab==="logs"){
+    main=viewLogs();
+  }else if(!state.tab){
+    main=`<div class="card empty"><b>Seu login não tem acesso às abas da secretaria</b>Fale com o responsável pela instituição para liberar o que você precisa.</div>`;
+  }else{
+    const profs=users.filter(u=>u.role==="professor"),staff=users.filter(u=>u.role==="secretaria");
+    const row=u=>{const cs=classes().filter(c=>c.professorId===u.id).map(c=>esc(c.name)).join(", ");return `<button class="row" data-act="user" data-v="${esc(u.id)}"><span class="av" aria-hidden="true">${esc(initials(u.name))}</span><span class="who"><b>${esc(u.name)}${u.id===state.me.id?" (você)":""}</b><span>Login ${esc(u.login)}${u.role==="professor"?(cs?", turmas: "+cs:", sem turma atribuída"):u.owner?", responsável pela instituição, acesso total":u.perms?", "+permSummary(u.perms):""}</span></span></button>`;};
+    const pq=norm(F.pq.trim()),sq=norm(F.sq.trim()),own=u=>classes().filter(c=>c.professorId===u.id);
+    const pl=profs.filter(u=>has(pq,u.name,u.login)&&(!F.pCls||own(u).some(c=>c.id===F.pCls))&&(!F.pSit||(F.pSit==="sem"?!own(u).length:own(u).length>0)));
+    const sl=staff.filter(u=>has(sq,u.name,u.login));
+    main=state.tab==="logins"?`<div class="head"><h2>Professores</h2><input class="inp search" id="x-pq" data-f="pq" type="search" placeholder="Buscar por nome ou login" value="${esc(F.pq)}" aria-label="Buscar professor"><button class="btn gold" data-act="newuser" data-v="professor">${ico("plus",16)}Cadastrar professor</button></div><p class="sub">Cada professor entra com o próprio login e faz a chamada das turmas dele.</p>
+    ${profs.length?`<div class="filters f3 noprint">${sel("pCls","Turma",[["","Todas"],...classes().map(c=>[c.id,c.name])])}${sel("pSit","Situação",[["","Todas"],["com","Com turma atribuída"],["sem","Sem turma atribuída"]])}</div>${count(pl.length,profs.length,"professores",["pq","pCls","pSit"])}`:""}
+    <div class="card rows">${pl.length?pl.map(row).join(""):profs.length?none:`<div class="empty"><b>Nenhum professor cadastrado</b>Cadastre o professor, defina o login e a senha dele e escolha as turmas.</div>`}</div>`
+    :`<div class="head"><h2>Equipe da secretaria</h2><input class="inp search" id="x-sq" data-f="sq" type="search" placeholder="Buscar por nome ou login" value="${esc(F.sq)}" aria-label="Buscar na equipe"><button class="btn gold" data-act="newuser" data-v="secretaria">${ico("plus",16)}Adicionar pessoa</button></div><p class="sub">Quem é da secretaria gerencia alunos, cartões, turmas e professores desta instituição.</p>
+    ${count(sl.length,staff.length,"pessoas",["sq"])}
+    <div class="card rows">${sl.length?sl.map(row).join(""):none}</div>`;
+  }
+  if(state.tab&&state.tab!=="logs"&&can(state.tab)==="view")main=main.replace(/<button class="btn gold" data-act="(student|class|newuser)"[^>]*>[\s\S]*?<\/button>/,"").replace("</div>",`</div><p class="viewonly noprint">Seu acesso a esta aba é só para ver. Para alterar, fale com o responsável pela instituição.</p>`);
+  return side+`<section class="main" id="main">${main}</section>`;
+}
+
+/* ---------- relatórios de presença (secretaria) ---------- */
+function repData(){
+  const r=state.rep,[from,to]=rangeOf(r.per,r.from,r.to);
+  const ssAll=sessions().filter(s=>(!r.cls||s.classId===r.cls)&&(s.startedAt||0)>=from&&(s.startedAt||0)<=to),ss=ssAll.filter(s=>s.endedAt);
+  const sts=students().filter(st=>(!r.course||String(st.course||"")===r.course)&&(!r.cls||(st.classIds||[]).includes(r.cls)));
+  const alunos=sts.map(st=>{const list=ss.filter(s=>(st.classIds||[]).includes(s.classId)).map(s=>({classId:s.classId,className:s.className,mode:s.mode,startedAt:s.startedAt,endedAt:s.endedAt,record:(s.records||{})[st.id]||null,just:just[s.id+"/"+st.id]||null}));
+    const x=alunoStats(list);return {st,hrs:x.hrs,tot:x.tot,pres:x.pres,par:x.par,jus:x.jus,ms:x.ms,prev:x.prev,pct:freqPct(x)};});
+  const min=Number(r.min)||0,alunosF=min?alunos.filter(a=>a.pct!==null&&a.pct<min):alunos;
+  const ids=new Set(sts.map(s=>s.id));
+  const mk=s=>{const rs=roster(s.classId).filter(x=>ids.has(x.id)),p=presentCount(s,rs);return {s,tot:rs.length,pres:p,pct:rs.length?Math.round(100*p/rs.length):null};};
+  const aulas=ss.map(mk),aulasAll=ssAll.map(mk);
+  const lg=logs.filter(l=>(!r.cls||(data.sessions.get(l.sessionId)||{}).classId===r.cls)&&(l.at||0)>=from&&(l.at||0)<=to);
+  const tm=new Map();
+  for(const a of aulas){const k=a.s.classId,q=tm.get(k)||{name:(data.classes.get(k)||{}).name||a.s.className||"Turma",n:0,pos:0,pres:0,ms:0};q.n++;q.pos+=a.tot;q.pres+=a.pres;q.ms+=Math.min(Math.max(0,a.s.endedAt-a.s.startedAt),6*3600000);tm.set(k,q);}
+  const turmas=[...tm.values()].sort((x,y)=>x.name.localeCompare(y.name,"pt-BR"));
+  const pos=aulas.reduce((n,a)=>n+a.tot,0),pres=aulas.reduce((n,a)=>n+a.pres,0);
+  const rq=norm((r.q||"").trim());
+  if(rq)return {alunos:alunosF.filter(a=>[a.st.name,a.st.ra,a.st.course].some(v=>norm(v).includes(rq))),todos:alunos,aulas,aulasAll:aulasAll.filter(a=>[a.s.className,a.s.by,fmtDay(a.s.startedAt)].some(v=>norm(v).includes(rq))),logs:lg.filter(l=>[l.studentName,l.by,l.className,l.note].some(v=>norm(v).includes(rq))),turmas:turmas.filter(t=>norm(t.name).includes(rq)),pos,pres,abaixo:alunos.filter(a=>a.pct!==null&&a.pct<75).length};
+  return {alunos:alunosF,todos:alunos,aulas,aulasAll,logs:lg,turmas,pos,pres,abaixo:alunos.filter(a=>a.pct!==null&&a.pct<75).length};
+}
+function repTable(d){
+  const v=state.rep.view,lb=L(),pc=x=>x===null?"–":x+"%";
+  if(v==="turmas")return {head:["Turma","Aulas","Presenças","Faltas","Frequência média","Horas de aula"],rows:d.turmas.map(q=>[q.name,q.n,q.pres,q.pos-q.pres,q.pos?Math.round(100*q.pres/q.pos)+"%":"–",fmtDur(q.ms)])};
+  if(v==="aulas")return {head:["Data","Início","Fim","Turma","Professor","Presentes","Alunos","Frequência"],ids:d.aulasAll.map(a=>a.s.id),rows:d.aulasAll.map(a=>[fmtDay(a.s.startedAt),fmtT(a.s.startedAt),a.s.endedAt?fmtT(a.s.endedAt):"em andamento",a.s.className||"Turma",a.s.by||"",a.pres,a.tot,pc(a.pct)])};
+  if(v==="log")return {head:["Quando","Responsável","Alteração"],rows:d.logs.map(l=>[new Date(l.at).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}),l.by||"",logText(l,false)])};
+  return {head:["Aluno",lb.ra,lb.course,"Aulas","Presenças","Parciais","Faltas","Frequência","Justificadas","Horas previstas","Horas cumpridas","Saldo de horas"],rows:d.alunos.map(a=>[a.st.name,a.st.ra,a.st.course||"",a.tot,a.pres,a.par,a.tot-a.pres-a.par-a.jus,pc(a.pct),a.jus,a.prev?fmtDur(a.prev):"0 h",a.ms?fmtDur(a.ms):"0 h",fmtSaldo(a.ms-a.prev)])};
+}
+function repSummary(){
+  const r=state.rep,parts=[];
+  parts.push(r.cls&&data.classes.get(r.cls)?"Turma: "+data.classes.get(r.cls).name:"Todas as turmas");
+  if(r.course)parts.push(L().course+": "+r.course);
+  parts.push(r.per==="custom"?"Período: "+(r.from?fmtDay(new Date(r.from+"T12:00:00").getTime()):"início")+" a "+(r.to?fmtDay(new Date(r.to+"T12:00:00").getTime()):"hoje"):"Período: "+PERIODS.find(x=>x[0]===r.per)[1].toLowerCase());
+  if((r.q||"").trim())parts.push("Busca: "+r.q.trim());
+  if(r.min&&r.view==="alunos")parts.push("Só alunos abaixo de "+r.min+"%");
+  return parts.join(", ");
+}
+function viewRep(){
+  const r=state.rep,d=repData(),t=repTable(d),lb=L(),cnames=[...new Set([...courseNames(),...students().map(s=>String(s.course||"")).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  const opt=(v,l,cur)=>`<option value="${esc(v)}" ${String(cur)===String(v)?"selected":""}>${esc(l)}</option>`;
+  const numCols=r.view==="alunos"?[3,4,5,6,7,8,9,10,11]:r.view==="turmas"?[1,2,3,4,5]:r.view==="aulas"?[5,6,7]:[];
+  return `<div class="head"><h2>Chamadas e relatórios</h2><span class="acts noprint"><button class="btn" data-act="repcopy">Copiar</button><button class="btn" data-act="repcsv">Baixar planilha</button><button class="btn gold" data-act="repprint">Imprimir</button></span></div>
+  <div class="printhead"><b>${esc(state.tenant.name)}</b>Relatório de presença, ${{alunos:"por aluno",turmas:"por turma",aulas:"por aula",log:"alterações feitas pela secretaria"}[r.view]}<br>${esc(repSummary())}<br>Gerado em ${new Date().toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})}</div>
+  <div class="filters f3 noprint">
+    <div class="field"><label for="r-q">Buscar</label><input class="inp" id="r-q" type="search" placeholder="${{alunos:"Nome, "+lb.ra.toLowerCase()+" ou "+lb.course.toLowerCase(),turmas:"Nome da turma",aulas:"Turma, professor ou data",log:"Aluno, responsável ou turma"}[r.view]}" value="${esc(r.q||"")}"></div>
+    <div class="field"><label for="r-view">Mostrar</label><select class="inp" id="r-view">${opt("aulas","Por aula (chamadas)",r.view)}${opt("alunos","Por aluno",r.view)}${opt("turmas","Por turma",r.view)}</select></div>
+    <div class="field"><label for="r-cls">Turma</label><select class="inp" id="r-cls">${opt("","Todas",r.cls)}${classes().map(c=>opt(c.id,c.name,r.cls)).join("")}</select></div>
+    <div class="field"><label for="r-course">${lb.course}</label><select class="inp" id="r-course">${opt("","Todos",r.course)}${cnames.map(c=>opt(c,c,r.course)).join("")}</select></div>
+    <div class="field"><label for="r-per">Período</label><select class="inp" id="r-per">${PERIODS.map(([k,n])=>opt(k,n,r.per)).join("")}</select></div>
+    ${r.per==="custom"?`<div class="field"><label for="r-from">De</label><input class="inp" type="date" id="r-from" value="${esc(r.from)}" max="${dayKey(Date.now())}"></div><div class="field"><label for="r-to">Até</label><input class="inp" type="date" id="r-to" value="${esc(r.to)}" max="${dayKey(Date.now())}"></div>`:""}
+    ${r.view==="alunos"?`<div class="field"><label for="r-min">Frequência</label><select class="inp" id="r-min">${opt("","Todos os alunos",r.min)}${opt("75","Abaixo de 75%",r.min)}${opt("50","Abaixo de 50%",r.min)}${opt("25","Abaixo de 25%",r.min)}</select></div>`:""}
+  </div>
+  ${r.per==="custom"&&r.from&&r.to&&r.from>r.to?`<p class="note" style="margin:0 0 12px;color:var(--bad)">A data inicial está depois da data final.</p>`:""}
+  <div class="stats"><div><b>${d.aulas.length}</b><span>aulas encerradas</span></div><div><b>${d.pos?Math.round(100*d.pres/d.pos)+"%":"–"}</b><span>frequência média</span></div><div><b>${d.todos.length}</b><span>alunos no filtro</span></div><div><b>${d.abaixo}</b><span>abaixo de 75%</span></div></div>
+  ${t.rows.length?`<div class="card tbl"><table class="rep"><thead><tr>${t.head.map((x,i)=>`<th class="${numCols.includes(i)?"num":""}">${esc(x)}</th>`).join("")}</tr></thead><tbody>${t.rows.map((row,ri)=>`<tr ${t.ids?`data-act="report" data-v="${esc(t.ids[ri])}" class="link"`:""}>${row.map((c,i)=>`<td class="${numCols.includes(i)?"num":""}">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${t.ids?`<p class="note noprint">Toque em uma aula para abrir a lista de presença, corrigir horários ou justificar faltas.</p>`:""}`
+    :`<div class="card empty"><b>Nada neste filtro</b>${data.sessions.size?"Troque a turma, o período ou a frequência.":"Os relatórios aparecem depois que os professores encerrarem as primeiras chamadas."}</div>`}
+  <p class="note">Contam só as chamadas encerradas. As horas cumpridas vão da entrada à saída do aluno, dentro do horário da chamada, com no máximo 6 horas por aula. Saldo de horas é o cumprido menos o previsto. A regra de presença é de cada turma (em Editar turma, na aba Turmas): pela leitura do cartão, a frequência é presenças ÷ aulas; pelas horas em sala, é horas cumpridas ÷ previstas. Falta justificada não conta como falta nem entra nas horas previstas.</p>`;
+}
+function repExport(kind){
+  const t=repTable(repData());if(!t.rows.length){toast("Não há linhas neste filtro.");return;}
+  if(kind==="copy"){navigator.clipboard.writeText([t.head,...t.rows].map(r=>r.join("\t")).join("\n")).then(()=>toast("Copiado. Cole no Excel ou no Google Planilhas."),()=>toast("Não foi possível copiar neste navegador."));return;}
+  const q=c=>'"'+String(c).replace(/"/g,'""')+'"',csv="\ufeff"+[t.head,...t.rows].map(r=>r.map(q).join(";")).join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download="presenca-"+state.rep.view+"-"+dayKey(Date.now())+".csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+function viewOpen(){
+  const f=state.of,o=(v,l,cur)=>`<option value="${esc(v)}" ${String(cur)===String(v)?"selected":""}>${esc(l)}</option>`,every=sessions(),q=norm(f.q.trim()),[from,to]=rangeOf(f.per,f.from,f.to);
+  const bys=[...new Set(every.map(s=>s.by).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR")),cls=[...new Map(every.map(s=>[s.classId,(data.classes.get(s.classId)||{}).name||s.className||"Turma"])).entries()].sort((a,b)=>a[1].localeCompare(b[1],"pt-BR"));
+  const hit=s=>(!f.cls||s.classId===f.cls)&&(!f.by||s.by===f.by)&&(!q||[s.className,s.by,(data.classes.get(s.classId)||{}).room,fmtDay(s.startedAt)].some(v=>norm(v).includes(q)));
+  const allOpen=every.filter(s=>!s.endedAt),open=allOpen.filter(hit),allDone=every.filter(s=>s.endedAt),done=allDone.filter(s=>hit(s)&&(s.startedAt||0)>=from&&(s.startedAt||0)<=to),on=f.q||f.cls||f.by||f.per!=="all",ed=can("freq")==="edit";
+  return `<section class="main" id="main"><div class="head"><h2>Chamada</h2><input class="inp search" id="of-q" type="search" placeholder="Buscar por turma, professor, sala ou data" value="${esc(f.q)}" aria-label="Buscar chamada"></div>
+  <p class="sub">As chamadas que os professores estão fazendo agora e as que já foram encerradas. Quem abre a chamada é o professor.</p>
+  ${every.length?`<div class="filters f3 noprint"><div class="field"><label for="of-cls">Turma</label><select class="inp" id="of-cls">${o("","Todas",f.cls)}${cls.map(([k,n])=>o(k,n,f.cls)).join("")}</select></div><div class="field"><label for="of-by">Professor</label><select class="inp" id="of-by">${o("","Todos",f.by)}${bys.map(b=>o(b,b,f.by)).join("")}</select></div><div class="field"><label for="of-per">Período das encerradas</label><select class="inp" id="of-per">${PERIODS.map(([k,n])=>o(k,n,f.per)).join("")}</select></div>
+  ${f.per==="custom"?`<div class="field"><label for="of-from">De</label><input class="inp" type="date" id="of-from" value="${esc(f.from)}" max="${dayKey(Date.now())}"></div><div class="field"><label for="of-to">Até</label><input class="inp" type="date" id="of-to" value="${esc(f.to)}" max="${dayKey(Date.now())}"></div>`:""}</div>${on?`<p class="fcount noprint">Filtros ligados<button class="btn sm" data-act="ofclear">Limpar filtros</button></p>`:""}`:""}
+  <div class="sec"><h3>Chamadas em aberto agora</h3><p class="note" style="margin:-4px 0 10px">${on?open.length+" de "+allOpen.length:allOpen.length} em aberto. A lista se atualiza sozinha a cada leitura.</p>
+  <div class="card rows">${open.length?open.map(s=>{const rs=roster(s.classId),c=data.classes.get(s.classId)||{};return `<div class="row"><span class="who"><b>${esc(s.className||"Turma")}</b><span>${esc(s.by||"Professor")}${c.room?", "+esc(c.room):""}, aberta às ${fmtT(s.startedAt)}, leitura ${esc((MODES[s.mode]||MODES.entrada).toLowerCase())}</span></span><span class="chip ok">${presentCount(s,rs)} de ${rs.length} presentes</span>${s.autoEnd?`<span class="chip wait">Encerra às ${fmtT(s.autoEnd)}</span>`:`<span class="chip plain">Sem hora para encerrar</span>`}<span class="acts"><button class="btn sm" data-act="report" data-v="${esc(s.id)}">Ver lista</button>${ed?`<button class="btn sm danger" data-act="endopen" data-v="${esc(s.id)}">Encerrar</button>`:""}</span></div>`;}).join(""):`<div class="empty"><b>${allOpen.length?"Nenhuma em aberto neste filtro":"Nenhuma chamada em aberto agora"}</b>${allOpen.length?"Troque a busca ou os filtros.":"Quando um professor abrir uma chamada, ela aparece aqui."}</div>`}</div></div>
+  <div class="sec"><h3>Chamadas encerradas</h3><p class="note" style="margin:-4px 0 10px">${on?done.length+" de "+allDone.length:allDone.length} encerrada${allDone.length===1?"":"s"}${done.length>80?", mostrando as 80 mais recentes":""}. Abra uma para ver a lista de presença, corrigir horários ou justificar faltas.</p>
+  <div class="card rows">${done.length?done.slice(0,80).map(s=>{const rs=roster(s.classId),nj=rs.filter(x=>just[s.id+"/"+x.id]).length;return `<button class="row" data-act="report" data-v="${esc(s.id)}"><span class="who"><b>${esc(s.className||"Turma")}</b><span>${fmtD(s.startedAt)}, ${fmtT(s.startedAt)} às ${fmtT(s.endedAt)}${s.by?", "+esc(s.by):""}</span></span><span class="chip plain">${presentCount(s,rs)} de ${rs.length} presentes</span>${nj?`<span class="chip just">${nj} justificada${nj>1?"s":""}</span>`:""}</button>`;}).join(""):`<div class="empty"><b>${allDone.length?"Nenhuma encerrada neste filtro":"Nenhuma chamada encerrada ainda"}</b>${allDone.length?"Troque a busca, os filtros ou o período.":"As aulas aparecem aqui depois que o professor encerra a chamada."}</div>`}</div></div></section>`;
+}
+function viewProf(){
+  if(state.me.role==="secretaria")return viewOpen();
+  const se=activeSession(),lb=L();
+  if(!se){
+    const cs=myClasses();
+    return `<section class="main" id="main"><div class="head"><h2>Chamada</h2></div><p class="sub">Escolha a turma. Você define se a leitura do cartão vale na entrada, na saída ou nas duas.</p>
+    ${cs.length?`<div class="grid">${cs.map(c=>{const open=sessions().find(s=>s.classId===c.id&&!s.endedAt);return `<div class="card tile"><h3>${esc(c.name)}</h3><p>${esc(c.professor||"Qualquer professor")}${c.room?", "+esc(c.room):""}</p><p>${roster(c.id).length} alunos matriculados</p><p>Leitura ${esc((MODES[c.mode]||MODES.entrada).toLowerCase())}. ${esc(rulesText(classRules(c)))}. ${c.confirm?"Você confirma cada leitura.":"Presença direta, sem confirmar."}${c.profEdit?"":" Definido pela secretaria."}</p><div class="tileacts">${open?`<button class="btn gold" data-act="resume" data-v="${esc(open.id)}">Continuar chamada</button>`:`<button class="btn gold" data-act="start" data-v="${esc(c.id)}">Iniciar chamada</button>`}${c.profEdit?`<button class="btn" data-act="rules" data-v="${esc(c.id)}">Editar presença</button>`:""}</div></div>`;}).join("")}</div>`:`<div class="card empty"><b>Nenhuma turma disponível</b>A secretaria precisa criar as turmas e atribuí-las a você.</div>`}
+    ${(()=>{const f=state.pf,o=(v,l,cur)=>`<option value="${esc(v)}" ${String(cur)===String(v)?"selected":""}>${esc(l)}</option>`,ids=new Set(cs.map(c=>c.id)),allp=sessions().filter(s=>s.endedAt&&ids.has(s.classId)),[from,to]=rangeOf(f.per,f.from,f.to),q=norm(f.q.trim());
+      const past=allp.filter(s=>(!f.cls||s.classId===f.cls)&&(s.startedAt||0)>=from&&(s.startedAt||0)<=to&&(!q||[s.className,fmtDay(s.startedAt)].some(v=>norm(v).includes(q)))),on=f.q||f.cls||f.per!=="all";
+      return allp.length?`<div class="sec"><h3>Aulas anteriores</h3><p class="note" style="margin:-4px 0 10px">Abra uma aula para ajustar presenças e faltas: corrigir horários, dar falta ou justificar. O aluno vê cada ajuste.</p>
+      <div class="filters f3 noprint"><div class="field"><label for="pf-q">Buscar</label><input class="inp" id="pf-q" type="search" placeholder="Turma ou data" value="${esc(f.q)}"></div><div class="field"><label for="pf-cls">Turma</label><select class="inp" id="pf-cls">${o("","Todas",f.cls)}${cs.map(c=>o(c.id,c.name,f.cls)).join("")}</select></div><div class="field"><label for="pf-per">Período</label><select class="inp" id="pf-per">${PERIODS.map(([k,n])=>o(k,n,f.per)).join("")}</select></div>
+      ${f.per==="custom"?`<div class="field"><label for="pf-from">De</label><input class="inp" type="date" id="pf-from" value="${esc(f.from)}" max="${dayKey(Date.now())}"></div><div class="field"><label for="pf-to">Até</label><input class="inp" type="date" id="pf-to" value="${esc(f.to)}" max="${dayKey(Date.now())}"></div>`:""}</div>
+      <p class="fcount noprint">${on?past.length+" de "+allp.length:allp.length} aula${allp.length===1?"":"s"}${on?`<button class="btn sm" data-act="pfclear">Limpar filtros</button>`:""}${past.length>60?" (mostrando as 60 mais recentes)":""}</p>
+      <div class="card rows">${past.length?past.slice(0,60).map(s=>{const rs=roster(s.classId),nj=rs.filter(x=>just[s.id+"/"+x.id]).length;return `<button class="row" data-act="report" data-v="${esc(s.id)}"><span class="who"><b>${esc(s.className||"Turma")}</b><span>${fmtD(s.startedAt)}, ${fmtT(s.startedAt)} às ${fmtT(s.endedAt)}</span></span><span class="chip plain">${presentCount(s,rs)} de ${rs.length} presentes</span>${nj?`<span class="chip just">${nj} justificada${nj>1?"s":""}</span>`:""}</button>`;}).join(""):`<div class="empty"><b>Nada neste filtro</b>Troque a busca, a turma ou o período.</div>`}</div></div>`:"";})()}</section>`;
+  }
+  const rs=roster(se.classId),b=state.blip&&!state.blip.idle?state.blip:null,fresh=b&&Date.now()-b.at<400;
+  const reader=b?`<div class="blip ${b.kind==="ok"?"":b.kind} ${fresh?"new":""}">${b.student?avatar(b.student,"lg"):`<span class="av lg" aria-hidden="true">?</span>`}<h3>${esc(b.student?b.student.name:"Cartão desconhecido")}</h3>${b.student?`<p>${lb.ra} ${esc(b.student.ra)}${b.student.course?", "+esc(b.student.course):""}</p>`:""}<p class="msg">${esc(b.msg)}</p>${b.detail?`<p>${esc(b.detail)}</p>`:""}${b.kind==="ask"&&b.student?`<div class="askrow"><button class="btn gold" data-act="readyes" data-v="${esc(b.student.id)}">Confirmar presença</button><button class="btn" data-act="readno">Não é este aluno</button></div>`:""}</div>`
+    :`<div class="ring"><img src="mark.png" alt=""></div><h3 class="idle">Aproxime o cartão do leitor</h3><small>${state.nfcOn?"NFC do celular ativo: encoste o cartão na parte de trás do aparelho.":"O leitor USB funciona sozinho com esta tela aberta."}${state.blip&&state.blip.student?` Último lido: ${esc(state.blip.student.name)}.`:""}</small>`;
+  return `<section class="main" id="main"><div class="head"><h2>${esc(se.className)}</h2><span class="chip plain">Leitura ${esc(MODES[se.mode].toLowerCase())}</span>${se.autoEnd?`<span class="chip wait">Encerra sozinha às ${fmtT(se.autoEnd)}</span>`:""}<span class="chip plain">${se.confirm?"Com confirmação do professor":"Presença direta, sem confirmar"}</span><span class="count"><b>${presentCount(se,rs)}</b> de ${rs.length} presentes</span><button class="btn" data-act="back">Trocar turma</button><button class="btn danger" data-act="end">Encerrar chamada</button></div>
+  <div class="live"><div class="card reader" aria-live="polite">${reader}<div class="typing" id="typing">${esc(state.typed)}</div>
+    <button class="btn" data-act="nfc">${ico("nfc",16)}${state.nfcOn?"NFC do celular ativo":"Ler cartões com o NFC deste celular"}</button>
+    <button class="btn" data-act="scan">Ler QR code com a câmera</button>
+    <form class="coderow" id="codeform"><input class="inp" id="code" inputmode="numeric" maxlength="6" placeholder="Número do cartão do aluno" aria-label="Número do cartão do aluno" autocomplete="off"><button class="btn">Confirmar</button></form></div>
+  <div class="card rows">${rs.length?rs.map(s=>{const st=statusOf(se,s.id),r=(se.records||{})[s.id]||{};
+    const next=se.mode==="entrada"?(r.in?null:"Marcar entrada"):se.mode==="saida"?(r.out?null:"Marcar saída"):(!r.in?"Marcar entrada":!r.out?"Marcar saída":null);
+    return `<div class="row">${avatar(s)}<span class="who"><b>${esc(s.name)}</b><span>${lb.ra} ${esc(s.ra)}${r.in?", entrou "+fmtT(r.in):""}${r.out?", saiu "+fmtT(r.out):""}${r.manual?", manual":""}</span></span><span class="chip ${st.k}">${st.t}</span><span class="acts">${next?`<button class="btn sm" data-act="manual" data-v="${esc(s.id)}">${next}</button>`:""}${r.in||r.out?`<button class="btn sm" data-act="undo" data-v="${esc(s.id)}">Desfazer</button>`:""}</span></div>`;}).join(""):`<div class="empty"><b>Turma sem alunos</b>A secretaria precisa matricular os alunos nesta turma.</div>`}</div></div></section>`;
+}
+
+/* Frequência do aluno. Chamada ainda aberta e sem registro não conta como falta.
+   Horas: da entrada (ou início da chamada) até a saída (ou fim da chamada), no máximo 6 h por aula. */
+const PERIODS=[["all","Tudo"],["month","Este mês"],["sem","Este semestre"],["30","Últimos 30 dias"],["90","Últimos 90 dias"],["custom","Escolher datas"]];
+const subjKey=s=>s.classId||s.className||"";
+function alunoSubjects(a){const m=new Map();for(const s of a.sessions)if(!m.has(subjKey(s)))m.set(subjKey(s),s.className||"Turma");return [...m.entries()].sort((x,y)=>x[1].localeCompare(y[1],"pt-BR"));}
+/* Filtro do aluno: por matéria e por período. */
+function rangeOf(per,f,t){
+  const d=new Date();let from=0,to=Infinity;
+  if(per==="custom"){if(f)from=new Date(f+"T00:00:00").getTime();if(t)to=new Date(t+"T23:59:59.999").getTime();}
+  else if(per==="month")from=new Date(d.getFullYear(),d.getMonth(),1).getTime();
+  else if(per==="sem")from=new Date(d.getFullYear(),d.getMonth()<6?0:6,1).getTime();
+  else if(per==="30"||per==="90")from=Date.now()-Number(per)*86400000;
+  return [from,to];
+}
+function alunoFilter(a){
+  const [from,to]=rangeOf(state.fPer,state.fFrom,state.fTo);
+  const subj=alunoSubjects(a).some(([k])=>k===state.fSubj)?state.fSubj:"";
+  return a.sessions.filter(s=>(!subj||subjKey(s)===subj)&&(s.startedAt||0)>=from&&(s.startedAt||0)<=to);
+}
+function alunoStats(list){
+  const days=new Map(),subj=new Map();let tot=0,pres=0,par=0,jus=0,ms=0,prev=0,hrs=0;
+  for(const s of list){
+    const e=evalRec(s,s.record,s.just),ok=e.k==="ok";
+    if(!s.endedAt&&!ok)continue;
+    const hr=rulesOf(s).hours&&s.endedAt?1:0;
+    tot++;hrs+=hr;if(ok)pres++;else if(e.just)jus++;else if(e.par)par++;ms+=e.ms;prev+=e.dur;
+    const k=dayKey(s.startedAt),d=days.get(k)||{p:0,par:0,jus:0,t:0,items:[]};d.t++;if(ok)d.p++;else if(e.just)d.jus++;else if(e.par)d.par++;d.items.push(s);days.set(k,d);
+    const sk=s.classId||s.className,q=subj.get(sk)||{name:s.className||"Turma",t:0,p:0,par:0,jus:0,ms:0,prev:0,hrs:0};q.t++;q.hrs+=hr;if(ok)q.p++;else if(e.just)q.jus++;else if(e.par)q.par++;q.ms+=e.ms;q.prev+=e.dur;subj.set(sk,q);
+  }
+  return {days,subj:[...subj.values()].sort((x,y)=>x.name.localeCompare(y.name,"pt-BR")),tot,pres,par,jus,ms,prev,hrs};
+}
+/* Frequência: com a regra por horas, é horas cumpridas ÷ horas previstas; sem ela, presenças ÷ aulas. */
+const freqPct=q=>{const t=(q.tot===undefined?q.t:q.tot)-(q.jus||0),p=q.pres===undefined?q.p:q.pres;const all=q.tot===undefined?q.t:q.tot;return q.hrs&&q.hrs>=all-(q.jus||0)?(q.prev?Math.round(100*q.ms/q.prev):null):(t>0?Math.round(100*p/t):null);};
+const pcs=x=>x===null?"–":x+"%";
+function heatmap(days,endKey){
+  const today=new Date();today.setHours(0,0,0,0);
+  let end=endKey?new Date(endKey+"T00:00:00"):today;if(isNaN(end)||end>today)end=today;
+  const start=new Date(end);start.setDate(start.getDate()-start.getDay()-25*7);
+  let cells="",months="",lastM=-1;
+  for(let w=0;w<26;w++){
+    const first=new Date(start);first.setDate(start.getDate()+w*7);
+    const m=first.getMonth();months+=`<span>${m!==lastM?first.toLocaleDateString("pt-BR",{month:"short"}).replace(".",""):""}</span>`;lastM=m;
+    for(let d=0;d<7;d++){
+      const dt=new Date(start);dt.setDate(start.getDate()+w*7+d);
+      if(dt>end){cells+=`<span class="hm off"></span>`;continue;}
+      const k=dayKey(dt.getTime()),v=days.get(k),lvl=!v?"0":v.p===0?(v.par?"h":v.jus===v.t?"j":"x"):String(Math.min(3,v.p));
+      const label=dt.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"})+": "+(v?v.p+" de "+v.t+(v.t===1?" aula":" aulas")+" com presença":"sem aula");
+      cells+=`<button class="hm l${lvl}${state.day===k?" sel":""}" data-act="day" data-v="${k}" title="${label}" aria-label="${label}"></button>`;
+    }
+  }
+  return `<div class="hmwrap" id="hmwrap"><div class="hmin"><div class="hmm" aria-hidden="true">${months}</div><div class="hmrow"><div class="hmd" aria-hidden="true"><span></span><span>seg</span><span></span><span>qua</span><span></span><span>sex</span><span></span></div><div class="hmgrid">${cells}</div></div></div></div>
+  <div class="hmleg"><span><i style="background:rgba(255,255,255,.08)"></i>Sem aula</span><span><i style="background:rgba(255,116,102,.45)"></i>Faltou</span><span><i style="background:rgba(143,184,255,.5)"></i>Justificada</span>${anyHours()?`<span><i style="background:rgba(244,197,82,.5)"></i>Parcial</span>`:""}<span><i style="background:rgba(220,184,114,.42)"></i>1 aula</span><span><i style="background:rgba(220,184,114,.72)"></i>2 aulas</span><span><i style="background:var(--gold)"></i>3 ou mais</span></div>`;
+}
+function alunoFreq(a,list){
+  const x=alunoStats(list),pct=freqPct(x),dv=state.day&&x.days.get(state.day),H=anyHours();
+  const dayLabel=state.day?new Date(state.day+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"}):"";
+  const subs=alunoSubjects(a),filtered=state.fPer!=="all"||subs.some(([k])=>k===state.fSubj);
+  return `<div class="sec"><h3>Frequência</h3>
+    <div class="filters"><div class="field"><label for="f-subj">Matéria</label><select class="inp" id="f-subj"><option value="">Todas</option>${subs.map(([k,n])=>`<option value="${esc(k)}" ${state.fSubj===k?"selected":""}>${esc(n)}</option>`).join("")}</select></div>
+    <div class="field"><label for="f-per">Período</label><select class="inp" id="f-per">${PERIODS.map(([k,n])=>`<option value="${k}" ${state.fPer===k?"selected":""}>${n}</option>`).join("")}</select></div></div>
+    ${state.fPer==="custom"?`<div class="filters"><div class="field"><label for="f-from">De</label><input class="inp" type="date" id="f-from" value="${esc(state.fFrom)}" max="${dayKey(Date.now())}"></div><div class="field"><label for="f-to">Até</label><input class="inp" type="date" id="f-to" value="${esc(state.fTo)}" max="${dayKey(Date.now())}"></div></div>`:""}
+    ${state.fPer==="custom"&&state.fFrom&&state.fTo&&state.fFrom>state.fTo?`<p class="note" style="margin:0 0 12px;color:var(--bad)">A data inicial está depois da data final.</p>`:filtered&&!x.tot?`<p class="note" style="margin:0 0 12px">Nenhuma aula encerrada neste filtro.</p>`:""}
+    <div class="stats"><div><b>${x.pres}</b><span>presenças</span></div>${H?`<div><b>${x.par}</b><span>parciais</span></div>`:""}<div><b>${x.tot-x.pres-x.par-x.jus}</b><span>faltas</span></div>${x.jus?`<div><b>${x.jus}</b><span>justificadas</span></div>`:""}<div><b>${pcs(pct)}</b><span>${H?"das horas cumpridas":"de frequência"}</span></div><div><b>${x.ms?fmtDur(x.ms):"0 h"}</b><span>em aula, de ${x.prev?fmtDur(x.prev):"0 h"}</span></div><div><b>${fmtSaldo(x.ms-x.prev)}</b><span>saldo de horas</span></div></div>
+    ${heatmap(x.days,state.fPer==="custom"?state.fTo:"")}
+    ${state.day?`<div class="daybox"><div class="lbl" style="margin-bottom:6px">${esc(dayLabel)}</div><div class="card rows">${dv?dv.items.map(s=>{const st=evalRec(s,s.record,s.just),r=s.record||{};return `<div class="row"><span class="who"><b>${esc(s.className||"Turma")}</b><span>${fmtT(s.startedAt)}${s.endedAt?" às "+fmtT(s.endedAt):""}${r.in?", entrou "+fmtT(r.in):""}${r.out?", saiu "+fmtT(r.out):""}${st.ms?", "+fmtDur(st.ms)+" em sala":""}</span></span><span class="chip ${st.k}">${st.t}</span></div>`;}).join(""):`<div class="row"><span class="who"><span>Nenhuma aula registrada neste dia.</span></span></div>`}</div></div>`:`<p class="note" style="margin-top:8px">Toque em um dia para ver as aulas dele.</p>`}
+  </div>
+  <div class="sec"><h3>Por matéria</h3>${x.subj.length?`<div class="card tbl"><table class="subj"><thead><tr><th>Matéria</th><th class="num">Aulas</th><th class="num">Presenças</th><th class="num">Faltas</th><th class="num">Frequência</th><th class="num">Horas</th><th class="num">Saldo</th></tr></thead><tbody>${x.subj.map(q=>`<tr><td>${esc(q.name)}</td><td class="num">${q.t}</td><td class="num">${q.p}${H&&q.par?" + "+q.par+" parc.":""}</td><td class="num">${q.t-q.p-q.par-q.jus}${q.jus?" + "+q.jus+" just.":""}</td><td class="num">${pcs(freqPct(q))}</td><td class="num">${q.ms?fmtDur(q.ms):"0 h"}</td><td class="num">${fmtSaldo(q.ms-q.prev)}</td></tr>`).join("")}</tbody><tfoot><tr><th>Total</th><th class="num">${x.tot}</th><th class="num">${x.pres}${H&&x.par?" + "+x.par+" parc.":""}</th><th class="num">${x.tot-x.pres-x.par-x.jus}${x.jus?" + "+x.jus+" just.":""}</th><th class="num">${pcs(pct)}</th><th class="num">${x.ms?fmtDur(x.ms):"0 h"}</th><th class="num">${fmtSaldo(x.ms-x.prev)}</th></tr></tfoot></table></div><p class="note">Saldo de horas: tempo em sala menos a duração das aulas. Negativo indica horas a menos. Falta justificada não conta como falta nem entra nas horas previstas.${H?" Nas matérias com presença pelas horas, a situação depende do tempo que você ficou em sala.":""}</p>`:`<div class="card empty"><b>${filtered?"Nenhuma aula neste filtro":"Nenhuma aula ainda"}</b>${filtered?"Troque a matéria ou o período.":"O resumo por matéria aparece depois da primeira chamada."}</div>`}</div>`;
+}
+function viewAluno(){
+  const a=state.aluno;
+  if(!a)return `<section class="main" id="main"><div class="empty"><b>Abrindo seu cartão</b>Aguarde um instante.</div></section>`;
+  const st=a.student,lb=L(a.tenant),card=a.card||{code:"",qr:""},flist=alunoFilter(a);
+  return `<section class="main" id="main"><div class="head"><h2>Meu cartão</h2><button class="btn" data-act="alunopw">${a.hasPassword?"Senha e e-mail":"Criar senha"}</button><button class="btn" data-act="leave">Sair</button></div>
+  ${a.hasPassword?(a.email?"":`<div class="banner">Seu cadastro não tem e-mail de recuperação. Se esquecer a senha, só a secretaria poderá redefinir. <button class="linkbtn" data-act="alunopw">Adicionar e-mail</button></div>`):`<div class="banner">Seu cartão ainda não tem senha: quem souber sua matrícula consegue abri-lo. <button class="linkbtn" data-act="alunopw">Criar senha agora</button></div>`}
+  <div class="wallet"><div>${st.photo?`<div class="pass"><div class="top"><img src="mark.png" alt="" style="height:26px;filter:brightness(0);opacity:.72">${esc(a.tenant.name)}<span>${st.cardUid?"Cartão vinculado":"Sem cartão físico"}</span></div>
+    <div class="mid">${avatar(st,"md ph")}<div><b>${esc(st.name)}</b><span>${lb.ra} ${esc(st.ra)}${st.course?", "+esc(st.course):""}</span></div></div>
+    <div class="bot"><div><span class="lblc">Código de presença</span><span class="code" id="pcode">${esc(card.code)}</span></div><div class="qr" id="pqr" role="img" aria-label="QR code de presença">${qrSvg(card.qr,4)}</div></div></div>
+    <p class="note">Sem o cartão físico? Mostre o QR code para a câmera do professor, ou dite o código. Os dois são fixos e só mudam se você gerar um novo.</p>
+    <div class="wbtns"><button class="btn" data-act="walletqr">Guardar na Carteira do celular</button><button class="btn" data-act="newcard">Gerar novo código e QR code</button></div>
+    ${a.wallet&&(a.wallet.apple||a.wallet.google)?`<div class="wbtns">${a.wallet.apple?`<button class="wbtn" data-act="wallet" data-v="apple">Adicionar à Carteira da Apple</button>`:""}${a.wallet.google?`<button class="wbtn" data-act="wallet" data-v="google">Adicionar à Carteira do Google</button>`:""}</div><p class="note">O cartão da Carteira tem um QR code fixo, só seu.${(a.wallet.apple&&a.wallet.appleNfc)||(a.wallet.google&&a.wallet.googleNfc)?" Onde houver leitor compatível, ele também funciona por aproximação.":""}</p>`:""}`:`<div class="card need"><h3>Falta a sua foto 3x4</h3><p>O cartão só é liberado com a foto. É ela que aparece para o professor quando você registra presença.</p><div><button class="btn gold" data-act="alunofoto">Enviar foto 3x4</button></div><p>Se preferir, tire a foto na secretaria da sua instituição.</p></div>`}</div>
+  <div>${alunoFreq(a,flist)}<div class="sec"><h3>${flist.length===a.sessions.length?"Últimas aulas":"Aulas do filtro"}</h3><div class="card rows">${flist.length?flist.slice(0,flist.length===a.sessions.length?15:40).map(s=>{const x=evalRec(s,s.record,s.just),r=s.record||{},open=!s.endedAt&&x.k==="bad";return `<div class="row"><span class="who"><b>${esc(s.className||"Turma")}</b><span>${fmtD(s.startedAt)}${r.in?", entrou "+fmtT(r.in):""}${r.out?", saiu "+fmtT(r.out):""}</span></span><span class="chip ${open?"wait":x.k}">${open?"Chamada aberta":x.t}</span>${s.just?`<span class="acts"><button class="btn sm" data-act="alunojust" data-v="${esc(s.id)}">Ver justificativa</button></span>`:""}</div>`;}).join(""):`<div class="empty"><b>${a.sessions.length?"Nenhuma aula neste filtro":"Nenhuma chamada ainda"}</b>${a.sessions.length?"Troque a matéria ou o período.":"Suas presenças aparecem aqui depois da primeira aula."}</div>`}</div></div>
+  ${(a.logs||[]).length?`<div class="sec"><h3>Alterações no seu registro</h3><p class="note" style="margin:-4px 0 10px">Mudanças de horário e justificativas feitas pela secretaria ou pelo professor.</p><div class="card rows">${a.logs.map(l=>`<div class="row"><span class="who"><b>${esc(logTitle(l))}</b><span>${esc(logText(l,true))}</span></span>${l.type==="justificativa"&&l.action!=="removida"&&a.sessions.some(s=>s.id===l.sessionId&&s.just)?`<span class="acts"><button class="btn sm" data-act="alunojust" data-v="${esc(l.sessionId)}">Ver justificativa</button></span>`:""}</div>`).join("")}</div></div>`:""}
+  </div></div></section>`;
+}
+
+/* ---------- desenho ---------- */
+let raf=0;
+function render(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;paint();});}
+function paint(){
+  const a=document.activeElement,keep=a&&a.id&&$("#body").contains(a)?{id:a.id,v:a.value,s:a.selectionStart,e:a.selectionEnd}:null;
+  const ohm=$("#hmwrap"),hmx=ohm?ohm.scrollLeft:null;
+  const old=$("#main"),top=old?old.scrollTop:0,key=state.phase+state.area+state.tab+(state.sessionId||"")+state.loginTab;
+  const P=state.phase;
+  $("#wtitle").textContent=P==="app"?{admin:"Administração",instituicao:"Secretaria",professor:"Professor"}[state.area]:P==="aluno"?"Aluno":P==="setup"?"Primeiro uso":P==="login"?"Entrar":"TOCA tag";
+  $("#body").innerHTML=P==="loading"?`<section class="main" id="main"><div class="empty"><b>Carregando</b></div></section>`:P==="setup"?viewSetup():P==="login"?viewLogin():P==="aluno"?viewAluno():state.area==="admin"?viewAdmin():state.area==="instituicao"?viewInst():viewProf();
+  const m=$("#main");if(m&&paint.key===key)m.scrollTop=top;paint.key=key;
+  const nhm=$("#hmwrap");if(nhm)nhm.scrollLeft=hmx==null?nhm.scrollWidth:hmx;
+  if(keep){const n=document.getElementById(keep.id);if(n){n.value=keep.v??"";n.focus();try{n.setSelectionRange(keep.s,keep.e);}catch(e){}}}
+  const two=P==="app"&&state.me.role==="secretaria";
+  $("#dockwrap").hidden=!two;
+  if(two)$("#dock").innerHTML=[["instituicao","Secretaria"],["professor","Chamada"]].map(([k,l])=>`<button data-act="area" data-v="${k}" aria-current="${state.area===k}"><span class="ic">${ico(k,24)}</span>${l}</button>`).join("");
+  $("#tname").textContent=P==="app"?(state.tenant?state.tenant.name:"Administração"):P==="aluno"&&state.aluno?state.aluno.tenant.name:"";
+  const ac=$("#acct");ac.hidden=P!=="app";if(P==="app")ac.textContent=state.me.name;
+  if(P==="app"&&state.me.weakPw){const m=$("#main");if(m&&!m.querySelector(".weakpw"))m.insertAdjacentHTML("afterbegin",`<div class="weakpw noprint"><span><b>Sua senha é fácil de adivinhar.</b> Troque por uma com pelo menos 8 caracteres para proteger os dados.</span><button class="btn sm gold" data-act="account">Trocar senha</button></div>`);}
+  const sy=$("#sync");sy.hidden=P!=="app";sy.className="sync "+(state.online?"on":"off");sy.lastElementChild.textContent=state.online?"Conectado":"Sem conexão";
+  tick();
+}
+function tick(){
+  $("#clock").textContent=new Date().toLocaleString("pt-BR",{weekday:"short",hour:"2-digit",minute:"2-digit"});
+}
+setInterval(tick,1000);
+
+/* ---------- folhas ---------- */
+function openSheet(html,wide){const s=$("#sheet");s.className="sheet glass"+(wide?" wide":"");s.innerHTML=html;$("#veil").classList.add("open");const f=s.querySelector("[autofocus]")||(s.querySelector('input[type="time"],input[type="date"]')?null:s.querySelector('input:not([type="file"])'))||s.querySelector("button");if(f)f.focus({preventScroll:true});lockSheet();}
+let sheetTab="";
+function lockSheet(){
+  const s=$("#sheet");if(!sheetTab||can(sheetTab)!=="view"||!s.innerHTML)return;
+  s.querySelectorAll("input,select,textarea,button").forEach(x=>{if(!x.matches('[data-act="close"],#r-copy,#j-back,#rt-back,[data-act="just"]'))x.disabled=true;});
+  if(!s.querySelector(".viewonly")){const p=document.createElement("p");p.className="viewonly";p.textContent="Seu acesso a esta aba é só para ver. Para alterar, fale com o responsável pela instituição.";const h2=s.querySelector("h2");if(h2)h2.after(p);}
+}
+function closeSheet(){sheetTab="";stopScan();if(nfc)nfc.cb=handleUid;$("#veil").classList.remove("open");$("#sheet").innerHTML="";}
+function confirmSheet(title,text,label,fn){openSheet(`<h2>${esc(title)}</h2><p class="sub">${esc(text)}</p><div class="foot"><button class="btn" data-act="close">Cancelar</button><button class="btn danger" id="yes">${esc(label)}</button></div>`);$("#yes").onclick=()=>{closeSheet();fn();};}
+
+function accountSheet(){
+  openSheet(`<h2>${esc(state.me.name)}</h2><p class="sub">${ROLES[state.me.role]}${state.tenant?", "+esc(state.tenant.name):""}. Login ${esc(state.me.login)}.</p>
+  <form id="pf" class="form" novalidate>
+    <div class="field"><label for="p-cur">Senha atual</label><input class="inp" id="p-cur" type="password" autocomplete="current-password"></div>
+    <div class="field"><label for="p-new">Nova senha</label><input class="inp" id="p-new" type="password" autocomplete="new-password"></div>
+    <div class="full err" id="p-err"></div>
+    <div class="full foot"><button type="button" class="btn danger l" id="p-out">Sair da conta</button><button type="button" class="btn" data-act="close">Fechar</button><button class="btn gold">Trocar senha</button></div>
+  </form>`);
+  $("#p-out").onclick=()=>{closeSheet();logout();};
+  $("#pf").onsubmit=async e=>{e.preventDefault();try{await api("PUT","me/password",{current:$("#p-cur").value,password:$("#p-new").value});delete state.me.weakPw;closeSheet();render();toast("Senha trocada. As outras sessões desta conta foram encerradas.");}catch(x){$("#p-err").textContent=x.message;}};
+}
+function alunoFotoSheet(){
+  let photo="";
+  openSheet(`<h2>Enviar foto 3x4</h2><p class="sub">Tire a foto agora ou escolha uma da galeria. Ela é cortada no formato 3x4.</p>
+  <form id="fotof" class="form" novalidate>
+    <div class="full photo"><span id="fpv"><span class="av ph" aria-hidden="true">?</span></span><div class="field"><label for="f-photo">Sua foto</label><input id="f-photo" type="file" accept="image/*"></div></div>
+    <ul class="full tips"><li>Rosto de frente, do peito para cima, centralizado.</li><li>Fundo claro e boa luz.</li><li>Sem boné, óculos escuros ou filtro.</li></ul>
+    <p class="full note" style="margin:0">Depois de enviada, só a secretaria consegue trocar a foto.</p>
+    <div class="full err" id="foto-err"></div>
+    <div class="full foot"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn gold">Enviar foto</button></div>
+  </form>`);
+  $("#f-photo").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{photo=await readPhoto(f);$("#fpv").innerHTML=`<img class="av ph" src="${photo}" alt="Prévia da sua foto">`;$("#foto-err").textContent="";}catch(x){photo="";$("#foto-err").textContent="Não foi possível abrir essa imagem. Escolha um arquivo JPG ou PNG.";}};
+  $("#fotof").onsubmit=async e=>{e.preventDefault();
+    if(!photo){$("#foto-err").textContent="Escolha ou tire uma foto primeiro.";return;}
+    try{alunoIn(await api("POST","aluno/foto",{token:state.alunoKey,photo}));closeSheet();toast("Foto enviada. Seu cartão está liberado.");render();}
+    catch(x){$("#foto-err").textContent=x.message;}};
+}
+function alunoPwSheet(){
+  const a=state.aluno;if(!a)return;const had=a.hasPassword;
+  openSheet(`<h2>${a.hasPassword?"Senha e e-mail de recuperação":"Crie sua senha"}</h2><p class="sub">${a.hasPassword?"Deixe a nova senha em branco para trocar só o e-mail.":"A partir de agora, seu cartão só abre com esta senha. O e-mail serve para recuperar a senha se você esquecer."}</p>
+  <form id="apf" class="form" novalidate>
+    ${a.hasPassword?`<div class="field full"><label for="ap-cur">Senha atual</label><input class="inp" id="ap-cur" type="password" autocomplete="current-password"></div>`:""}
+    <div class="field full"><label for="ap-new">${a.hasPassword?"Nova senha":"Senha (mínimo de 6 caracteres)"}</label><input class="inp" id="ap-new" type="password" autocomplete="new-password" ${a.hasPassword?"":"autofocus"}></div>
+    <div class="field full"><label for="ap-email">E-mail de recuperação</label><input class="inp" id="ap-email" type="email" value="${esc(a.email)}" autocomplete="email" placeholder="voce@exemplo.com"></div>
+    <div class="full err" id="ap-err"></div>
+    <div class="full foot"><button type="button" class="btn" data-act="close">${a.hasPassword?"Cancelar":"Agora não"}</button><button class="btn gold">${a.hasPassword?"Salvar":"Criar senha"}</button></div>
+  </form>`);
+  $("#apf").onsubmit=async e=>{e.preventDefault();
+    const pw=$("#ap-new").value,email=$("#ap-email").value.trim(),cur=$("#ap-cur");
+    if(!had&&!email){$("#ap-err").textContent="Informe um e-mail de recuperação.";return;}
+    try{const r=await api("POST","aluno/senha",{token:state.alunoKey,password:pw,email,current:cur?cur.value:""});
+      if(state.aluno){state.aluno.hasPassword=true;state.aluno.email=r.email;}closeSheet();toast(had?"Dados salvos":"Senha criada");render();}
+    catch(x){$("#ap-err").textContent=x.message;}};
+}
+function forgotSheet(){
+  const inst=($("#al-inst")||{}).value||"",ra=($("#al-ra")||{}).value||"";
+  openSheet(`<h2>Esqueci minha senha</h2><p class="sub">Enviamos um código de 6 números para o seu e-mail de recuperação.</p>
+  <form id="ff" class="form" novalidate>
+    <div class="field full"><label for="f-inst">Nome da instituição</label><input class="inp" id="f-inst" list="instlist2" value="${esc(inst)}" autocomplete="off"><datalist id="instlist2">${insts.map(n=>`<option value="${esc(n)}"></option>`).join("")}</datalist></div>
+    <div class="field full"><label for="f-ra">RA ou matrícula</label><input class="inp" id="f-ra" value="${esc(ra)}" autocomplete="off"></div>
+    <div class="full" id="f-step2" hidden><div class="form"><div class="field"><label for="f-code">Código recebido</label><input class="inp" id="f-code" inputmode="numeric" maxlength="6" autocomplete="one-time-code"></div><div class="field"><label for="f-pw">Nova senha</label><input class="inp" id="f-pw" type="password" autocomplete="new-password"></div></div></div>
+    <div class="full err" id="f-err"></div>
+    <div class="full foot"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn gold" id="f-go">Enviar código</button></div>
+  </form>`);
+  let step=1;
+  $("#ff").onsubmit=async e=>{e.preventDefault();const who={inst:$("#f-inst").value,ra:$("#f-ra").value},err=$("#f-err");
+    try{
+      if(step===1){const r=await api("POST","aluno/recuperar",who);step=2;$("#f-step2").hidden=false;$("#f-go").textContent="Trocar senha";err.style.color="var(--ok)";err.textContent="Código enviado para "+r.email+". Ele vale por 15 minutos.";$("#f-code").focus();}
+      else{await api("POST","aluno/redefinir",{...who,codigo:$("#f-code").value,password:$("#f-pw").value});closeSheet();state.err="";toast("Senha trocada. Entre com a nova senha.");}
+    }catch(x){err.style.color="";err.textContent=x.message;}};
+}
+/* ---------- cursos (ou séries) ---------- */
+function coursesSheet(msg){
+  const lb=L(),ser=lb.course==="Série",one=ser?"série":"curso",ed=can("alunos")==="edit",list=Object.entries(courses).sort((a,b)=>a[1].name.localeCompare(b[1].name,"pt-BR")),cnt=n=>students().filter(s=>norm(s.course)===norm(n)).length;
+  openSheet(`<h2>${ser?"Séries":"Cursos"}</h2><p class="sub">Cadastre aqui ${ser?"as séries":"os cursos"} da instituição. No cadastro do aluno, ${ser?"a série":"o curso"} é escolhid${ser?"a":"o"} nesta lista, para não haver nomes escritos de jeitos diferentes.</p>
+  ${ed?`<form id="cnf" class="addrow"><input class="inp" id="cn-new" maxlength="80" placeholder="Nome d${ser?"a série":"o curso"}" aria-label="Nome d${ser?"a nova série":"o novo curso"}"><button class="btn gold">Adicionar</button></form>`:""}
+  <div class="err" id="cn-err">${esc(msg||"")}</div>
+  <div class="card rows">${list.length?list.map(([id,c])=>{const n=cnt(c.name);return `<div class="row crow"><input class="inp" data-cn="${esc(id)}" value="${esc(c.name)}" maxlength="80" aria-label="Nome d${ser?"a série":"o curso"}" ${ed?"":"disabled"}><span class="chip plain">${n} aluno${n===1?"":"s"}</span>${ed?`<span class="acts"><button class="btn sm" data-cs="${esc(id)}">Salvar nome</button><button class="btn sm danger" data-cd="${esc(id)}">Excluir</button></span>`:""}</div>`;}).join(""):`<div class="empty"><b>Nenhum${ser?"a":""} ${one} cadastrad${ser?"a":"o"}</b>Adicione ${ser?"a primeira série":"o primeiro curso"} no campo acima.</div>`}</div>
+  <p class="note">Renomear ${ser?"uma série":"um curso"} atualiza todos os alunos del${ser?"a":"e"}. Só dá para excluir ${ser?"série":"curso"} sem alunos.</p>
+  <div class="foot"><button class="btn gold" data-act="close">Fechar</button></div>`,true);
+  const run=async(fn,okMsg)=>{try{await fn();await load();coursesSheet();toast(okMsg);}catch(e){$("#cn-err").textContent=e.message;}};
+  if(ed)$("#cnf").onsubmit=e=>{e.preventDefault();const name=$("#cn-new").value.trim();if(!name){$("#cn-err").textContent="Informe o nome.";return;}run(()=>api("POST","courses",{name}),(ser?"Série adicionada":"Curso adicionado"));};
+  $("#sheet").querySelectorAll("[data-cs]").forEach(b=>b.onclick=()=>{const v=$(`#sheet [data-cn="${CSS.escape(b.dataset.cs)}"]`).value.trim();run(()=>api("PUT","courses/"+b.dataset.cs,{name:v}),"Nome salvo");});
+  $("#sheet").querySelectorAll("[data-cd]").forEach(b=>b.onclick=()=>run(()=>api("DELETE","courses/"+b.dataset.cd),(ser?"Série excluída":"Curso excluído")));
+}
+const LVN={edit:"Pode ver e alterar",view:"Só ver",none:"Sem acesso"};
+const permSummary=p=>{const ed=Object.keys(TABN).filter(k=>p[k]==="edit").map(k=>TABN[k]),vw=Object.keys(TABN).filter(k=>p[k]==="view").map(k=>TABN[k]);return (ed.length?"altera: "+ed.join(", "):"não altera nada")+(vw.length?"; só vê: "+vw.join(", "):"");};
+function userSheet(id,role){
+  const u=id&&users.find(x=>x.id===id);role=u?u.role:role;const prof=role==="professor",cs=classes(),who=prof?"professor":"pessoa da secretaria";
+  openSheet(`<h2>${u?"Editar "+who:prof?"Cadastrar professor":"Adicionar pessoa da secretaria"}</h2><p class="sub">${u?"Deixe a senha em branco para manter a atual.":"Passe o login e a senha para a pessoa. Ela pode trocar a senha depois."}</p>
+  <form id="uf" class="form" novalidate>
+    <div class="field full"><label for="u-name">Nome</label><input class="inp" id="u-name" value="${esc(u?u.name:"")}" autofocus autocomplete="off"></div>
+    <div class="field"><label for="u-login">Login</label><input class="inp" id="u-login" value="${esc(u?u.login:"")}" ${u?"disabled":""} autocomplete="off"></div>
+    <div class="field"><label for="u-pw">${u?"Nova senha":"Senha inicial"}</label><input class="inp" id="u-pw" autocomplete="off"></div>
+    ${prof?`<div class="full"><div class="lbl" style="margin-bottom:6px">Turmas deste professor</div><div class="checks">${cs.length?cs.map(c=>`<label><input type="checkbox" name="pcls" value="${esc(c.id)}" ${u&&c.professorId===u.id?"checked":""}>${esc(c.name)}${c.professorId&&(!u||c.professorId!==u.id)?" (hoje com "+esc(c.professor||"outro professor")+")":""}</label>`).join(""):`<span class="lbl">Nenhuma turma criada ainda. Você pode atribuir depois, na aba Turmas.</span>`}</div></div>`:""}
+    ${!prof&&state.me.owner&&!(u&&u.owner)?`<div class="full"><div class="lbl" style="margin-bottom:6px">O que esta pessoa pode acessar</div><div class="perms">${Object.keys(TABN).map(k=>{const cur=u&&u.perms?u.perms[k]:(k==="equipe"||k==="logs"?"view":"edit"),ops=k==="equipe"||k==="logs"?["view","none"]:["edit","view","none"];return `<div class="field"><label for="pm-${k}">${TABN[k]}</label><select class="inp" id="pm-${k}" data-pm="${k}">${ops.map(v=>`<option value="${v}" ${cur===v?"selected":""}>${LVN[v]}</option>`).join("")}</select></div>`;}).join("")}</div><span class="hint">Só você, responsável pela instituição, muda a equipe da secretaria e estas permissões. O Registro é sempre só para consulta.</span></div>`:""}
+    ${!prof&&u&&u.owner?`<p class="full note" style="margin:0">Este é o login do responsável pela instituição. Ele tem acesso total e não pode ser excluído.</p>`:""}
+    <div class="full err" id="u-err"></div>
+    <div class="full foot">${u&&u.id!==state.me.id&&!u.owner?`<button type="button" class="btn danger l" id="u-del">Excluir ${prof?"professor":"login"}</button>`:""}<button type="button" class="btn" data-act="close">Cancelar</button><button class="btn gold">Salvar</button></div>
+  </form>`);
+  if(u&&u.id!==state.me.id&&!u.owner)$("#u-del").onclick=()=>confirmSheet("Excluir "+u.name+"?","A pessoa deixa de conseguir entrar. As chamadas que ela fez continuam salvas, e as turmas dela ficam sem professor atribuído.","Excluir",async()=>{
+    try{await api("DELETE","users/"+id);for(const c of classes())if(c.professorId===id){const {id:cid,...b}=c;await save("classes",cid,{...b,professorId:"",professor:""});}toast("Excluído");}catch(x){toast(x.message);}load().catch(()=>{});});
+  $("#uf").onsubmit=async e=>{e.preventDefault();
+    const name=$("#u-name").value.trim(),picked=[...document.querySelectorAll('#uf input[name="pcls"]:checked')].map(i=>i.value);
+    const pm={};document.querySelectorAll("#uf [data-pm]").forEach(s=>pm[s.dataset.pm]=s.value);const perms=Object.keys(pm).length?pm:undefined;
+    try{let uid=id;
+      if(u)await api("PUT","users/"+id,{name,password:$("#u-pw").value,perms});
+      else uid=(await api("POST","users",{name,login:$("#u-login").value,password:$("#u-pw").value,role,perms})).id;
+      if(prof)for(const c of classes()){const {id:cid,...b}=c,want=picked.includes(cid),has=c.professorId===uid;
+        if(want&&(!has||c.professor!==name))await save("classes",cid,{...b,professorId:uid,professor:name});
+        else if(!want&&has)await save("classes",cid,{...b,professorId:"",professor:""});}
+      closeSheet();toast(prof?"Professor salvo":"Login salvo");load().catch(()=>{});}
+    catch(x){$("#u-err").textContent=x.message;}};
+}
+function studentSheet(id){
+  const lb=L(),s=id?{id,...data.students.get(id)}:{name:"",ra:"",course:"",cardUid:"",photo:"",classIds:[]};let photo=s.photo||"";
+  const cs=classes();
+  openSheet(`<h2>${id?"Editar aluno":"Cadastrar aluno"}</h2><p class="sub">A foto e o nome aparecem na tela do professor quando o cartão é lido.</p>
+  <form id="sf" class="form" novalidate>
+    <div class="full photo"><span id="pv">${avatar({name:s.name,photo},"ph")}</span><div class="field"><label for="s-photo">Foto 3x4 do aluno${s.photoBy==="aluno"?" (enviada pelo aluno)":""}</label><input id="s-photo" type="file" accept="image/*"><span class="lbl">Tire na hora ou escolha da galeria. Sem foto, o aluno precisa enviar a dele para liberar o cartão.</span></div></div>
+    <div class="field full"><label for="s-name">Nome completo</label><input class="inp" id="s-name" value="${esc(s.name)}" autofocus autocomplete="off"></div>
+    <div class="field"><label for="s-ra">${lb.ra}</label><input class="inp" id="s-ra" value="${esc(s.ra)}" autocomplete="off"></div>
+    <div class="field"><label for="s-course">${lb.course}</label><select class="inp" id="s-course"><option value="">${courseNames().length?"Selecione":"Nenhum cadastrado ainda"}</option>${[...new Set([...courseNames(),...(s.course?[s.course]:[])])].map(c=>`<option value="${esc(c)}" ${c===s.course?"selected":""}>${esc(c)}</option>`).join("")}</select><span class="hint">${courseNames().length?"Para incluir outro, use o botão "+(lb.course==="Série"?"Séries":"Cursos")+" na lista de alunos.":"Cadastre primeiro no botão "+(lb.course==="Série"?"Séries":"Cursos")+", na lista de alunos."}</span></div>
+    <div class="field full"><label for="s-uid">Cartão NFC</label><div class="coderow"><input class="inp" id="s-uid" value="${esc(s.cardUid)}" placeholder="Clique aqui e aproxime o cartão do leitor" autocomplete="off"><button type="button" class="btn" id="s-nfc">${ico("nfc",16)}Ler com o celular</button></div></div>
+    <div class="full"><div class="lbl" style="margin-bottom:6px">Turmas</div><div class="checks">${cs.length?cs.map(c=>`<label><input type="checkbox" name="cls" value="${esc(c.id)}" ${(s.classIds||[]).includes(c.id)?"checked":""}>${esc(c.name)}</label>`).join(""):`<span class="lbl">Nenhuma turma criada ainda.</span>`}</div></div>
+    ${id?`<div class="full pwrow"><span class="lbl">Senha do aluno: ${alunoSenha[id]?"criada":"ainda não criada"}</span>${alunoSenha[id]?`<button type="button" class="btn sm" data-act="resetpw" data-v="${esc(id)}">Redefinir senha do aluno</button>`:""}</div>`:""}
+    <div class="full err" id="s-err"></div>
+    <div class="full foot">${id?`<button type="button" class="btn danger l" id="s-del">Excluir aluno</button>`:""}<button type="button" class="btn" data-act="close">Cancelar</button><button class="btn gold">Salvar aluno</button></div>
+  </form>`);
+  $("#s-photo").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{photo=await readPhoto(f);$("#pv").innerHTML=avatar({name:$("#s-name").value,photo},"ph");}catch(x){$("#s-err").textContent="Não foi possível abrir essa imagem. Escolha um arquivo JPG ou PNG.";}};
+  $("#s-uid").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();e.target.value=normUid(e.target.value);}};
+  $("#s-nfc").onclick=()=>nfcScan(u=>{const f=$("#s-uid");if(f){f.value=normUid(u);toast("Cartão lido.");}});
+  if(id)$("#s-del").onclick=()=>confirmSheet("Excluir "+s.name+"?","O cadastro e o vínculo do cartão serão apagados. As chamadas já feitas continuam salvas.","Excluir aluno",()=>remove("students",id));
+  $("#sf").onsubmit=e=>{e.preventDefault();
+    const name=$("#s-name").value.trim(),ra=$("#s-ra").value.trim(),uid=normUid($("#s-uid").value),err=$("#s-err");
+    if(!name||!ra){err.textContent="Preencha o nome e o campo "+lb.ra+".";return;}
+    const others=students().filter(x=>x.id!==id);
+    if(others.some(x=>String(x.ra).toLowerCase()===ra.toLowerCase())){err.textContent="Já existe um aluno com esse número.";return;}
+    const dup=uid&&others.find(x=>sameCard(x.cardUid,uidForms(uid)));if(dup){err.textContent="Esse cartão já está vinculado a "+dup.name+".";return;}
+    const classIds=[...document.querySelectorAll('#sf input[name="cls"]:checked')].map(i=>i.value);
+    save("students",id||newId(),{...(id?data.students.get(id):{}),name,ra,course:$("#s-course").value,cardUid:uid,photo,...(photo!==(s.photo||"")?{photoBy:"secretaria"}:{}),classIds,updatedAt:Date.now()});closeSheet();toast("Aluno salvo");};
+}
+function classSheet(id){
+  const c=id?{id,...data.classes.get(id)}:{name:"",professorId:"",room:"",mode:"entrada"},profs=users.filter(u=>u.role==="professor"),R=id?classRules(c):{...rules,unit:"t"};
+  openSheet(`<h2>${id?"Editar turma":"Criar turma"}</h2><p class="sub">Defina aqui como a presença desta turma é registrada, ou deixe o professor escolher.</p>
+  <form id="cf" class="form" novalidate>
+    <div class="field full"><label for="c-name">Nome da turma ou disciplina</label><input class="inp" id="c-name" value="${esc(c.name)}" autofocus autocomplete="off"></div>
+    <div class="field"><label for="c-prof">Professor</label><select class="inp" id="c-prof"><option value="">Qualquer professor</option>${profs.map(u=>`<option value="${esc(u.id)}" ${c.professorId===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></div>
+    <div class="field"><label for="c-room">Sala</label><input class="inp" id="c-room" value="${esc(c.room)}" autocomplete="off"></div>
+    <div class="field full"><label for="c-who">Quem define a leitura e a regra de presença</label><select class="inp" id="c-who"><option value="0" ${c.profEdit?"":"selected"}>A secretaria define (o professor não pode mudar)</option><option value="1" ${c.profEdit?"selected":""}>O professor escolhe</option></select><span class="hint" id="c-whoh"></span></div>
+    <div class="field full"><label for="c-mode">Leitura do cartão</label><select class="inp" id="c-mode">${Object.entries(MODES).map(([k,l])=>`<option value="${k}" ${c.mode===k?"selected":""}>${l}</option>`).join("")}</select></div>
+    <div class="field full"><label for="c-conf">Quando o aluno aproximar o cartão</label><select class="inp" id="c-conf"><option value="0" ${c.confirm?"":"selected"}>Registrar a presença na hora, sem o professor confirmar</option><option value="1" ${c.confirm?"selected":""}>Esperar o professor conferir a foto e confirmar</option></select><span class="hint">Nos dois casos a foto e os dados do aluno aparecem na tela da chamada.</span></div>
+    <div class="field full"><label for="ru-mode">Como concluir a presença</label><select class="inp" id="ru-mode"><option value="0" ${R.hours?"":"selected"}>Pela leitura do cartão</option><option value="1" ${R.hours?"selected":""}>Pelas horas em sala (entrada e saída)</option></select></div>
+    <div class="field full ruh" ${R.hours?"":"hidden"}><label for="ru-unit">Medir por</label><select class="inp" id="ru-unit"><option value="t" ${R.unit==="t"?"selected":""}>Quantidade de horas em sala</option><option value="p" ${R.unit==="t"?"":"selected"}>Porcentagem da aula</option></select></div>
+    <div class="field ruh rut" ${R.hours&&R.unit==="t"?"":"hidden"}><label for="ru-pt">Presente com pelo menos</label><select class="inp" id="ru-pt">${[...new Set([15,30,45,60,75,90,105,120,150,180,210,240,300,R.pT])].sort((a,b)=>a-b).map(v=>ro(v,fmtMin(v)+" em sala",R.pT)).join("")}</select></div>
+    <div class="field ruh rut" ${R.hours&&R.unit==="t"?"":"hidden"}><label for="ru-part">Parcial com pelo menos</label><select class="inp" id="ru-part">${[...new Set([1,10,15,30,45,60,90,120,R.parT])].sort((a,b)=>a-b).map(v=>ro(v,v===1?"qualquer permanência":fmtMin(v)+" em sala",R.parT)).join("")}</select></div>
+    <div class="field ruh rup" ${R.hours&&R.unit!=="t"?"":"hidden"}><label for="ru-p">Presente a partir de</label><select class="inp" id="ru-p">${[100,90,75,60,50].map(v=>ro(v,v+"% da aula",R.pMin)).join("")}</select></div>
+    <div class="field ruh rup" ${R.hours&&R.unit!=="t"?"":"hidden"}><label for="ru-par">Parcial a partir de</label><select class="inp" id="ru-par">${[50,25,10,1].map(v=>ro(v,v===1?"qualquer permanência":v+"% da aula",R.parMin)).join("")}</select></div>
+    <p class="full note ruh" style="margin:0" ${R.hours?"":"hidden"}>O tempo em sala vai da entrada à saída do aluno, dentro do horário da chamada. Abaixo do mínimo de parcial, o aluno fica ausente. Quem não tiver entrada ou saída registrada fica como parcial, sem horas, até a secretaria corrigir o horário na lista da aula.</p>
+    <div class="full err" id="c-err">${profs.length?"":"Para atribuir a turma a um professor, cadastre-o na aba Professores."}</div>
+    <div class="full foot">${id?`<button type="button" class="btn danger l" id="c-del">Excluir turma</button>`:""}<button type="button" class="btn" data-act="close">Cancelar</button><button class="btn gold">Salvar turma</button></div>
+  </form>`);
+  rulesWire();
+  const who=$("#c-who"),wh=()=>{$("#c-whoh").textContent=who.value==="1"?"A turma aparece para o professor com o botão Editar presença. O que você marcar abaixo vale até ele mudar.":"O professor só inicia a chamada, do jeito definido abaixo.";};who.onchange=wh;wh();
+  if(id)$("#c-del").onclick=()=>confirmSheet("Excluir "+c.name+"?","A turma sai da lista. As chamadas já feitas continuam salvas.","Excluir turma",()=>remove("classes",id));
+  $("#cf").onsubmit=e=>{e.preventDefault();const name=$("#c-name").value.trim();if(!name){$("#c-err").textContent="Dê um nome à turma.";return;}
+    const pid=$("#c-prof").value,pu=profs.find(u=>u.id===pid);
+    const nr=rulesRead();if(!nr){$("#c-err").textContent="O mínimo de parcial não pode ser maior que o de presente.";return;}
+    save("classes",id||newId(),{...(id?data.classes.get(id):{}),name,professorId:pid,professor:pu?pu.name:"",room:$("#c-room").value.trim(),mode:$("#c-mode").value,rules:nr,profEdit:$("#c-who").value==="1",confirm:$("#c-conf").value==="1"});closeSheet();toast("Turma salva");};
+}
+function startSheet(cid){
+  const c=data.classes.get(cid);if(!c)return;let mode=MODES[c.mode]?c.mode:"entrada";
+  const hints={entrada:"Uma leitura na chegada já conta presença.",saida:"A presença só conta com a leitura ao sair.",ambas:"O aluno lê o cartão ao chegar e ao sair. A presença conta com as duas leituras."};
+  const locked=!c.profEdit;let auto="";
+  const AUTO=[["","Não encerrar sozinha"],["15","15 minutos"],["30","30 minutos"],["45","45 minutos"],["60","1 hora"],["90","1 hora e 30 minutos"],["120","2 horas"],["150","2 horas e 30 minutos"],["180","3 horas"],["240","4 horas"],["x","Outro tempo"]];
+  const autoField=()=>`<p class="note" style="margin-top:14px">${c.confirm?"Nesta turma você confere a foto e confirma cada leitura.":"Nesta turma a presença é registrada na hora em que o aluno aproxima o cartão."}${c.profEdit?" Para mudar, use Editar presença.":""}</p>
+    <div class="field"><label for="st-auto"><div class="field"><label for="st-auto">Encerrar a chamada sozinha depois de</label><select class="inp" id="st-auto">${AUTO.map(([v,l])=>`<option value="${v}" ${auto===v?"selected":""}>${l}</option>`).join("")}</select></div>
+    <div class="field" id="st-xw" ${auto==="x"?"":"hidden"}><label for="st-x">Tempo em minutos</label><input class="inp" id="st-x" type="number" inputmode="numeric" min="1" max="720" placeholder="Ex.: 100"></div>
+    <p class="note">No horário marcado a chamada fecha mesmo com esta tela fechada, e quem não registrou presença fica como ausente. Você ainda pode encerrar antes.</p><div class="err" id="st-err"></div>`;
+  const wire=()=>{$("#st-auto").onchange=e=>{auto=e.target.value;$("#st-xw").hidden=auto!=="x";};
+    $("#go").onclick=()=>{let min=0;if(auto==="x"){min=Math.round(Number($("#st-x").value));if(!(min>=1&&min<=720)){$("#st-err").textContent="Informe o tempo em minutos, de 1 a 720.";return;}}else if(auto)min=Number(auto);
+      const id=newId(),now=Date.now();save("sessions",id,{classId:cid,className:c.name,mode,by:state.me.name,startedAt:now,endedAt:null,records:{},...(min?{autoEnd:now+min*60000}:{})});state.sessionId=id;state.blip=null;closeSheet();render();};};
+  if(locked){openSheet(`<h2>Iniciar chamada de ${esc(c.name)}</h2><p class="sub">Leitura ${esc(MODES[mode].toLowerCase())}, definida pela secretaria. ${hints[mode]}</p><p class="note">${esc(rulesText(classRules(c)))}.</p>${autoField()}<div class="foot"><button class="btn" data-act="close">Cancelar</button><button class="btn gold" id="go">Iniciar chamada</button></div>`);wire();return;}
+  const draw=()=>{openSheet(`<h2>Iniciar chamada de ${esc(c.name)}</h2><p class="sub">Quando o cartão deve ser lido?</p><div class="seg" role="group" aria-label="Leitura do cartão">${Object.entries(MODES).map(([k,l])=>`<button type="button" data-m="${k}" aria-pressed="${mode===k}">${l}</button>`).join("")}</div><p class="note">${hints[mode]}</p>${autoField()}<div class="foot"><button class="btn" data-act="close">Cancelar</button><button class="btn gold" id="go">Iniciar chamada</button></div>`);
+    $("#sheet").querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{mode=b.dataset.m;draw();});wire();};
+  draw();
+}
+const ro=(v,l,cur)=>`<option value="${v}" ${Number(cur)===v?"selected":""}>${l}</option>`;
+function rulesWire(){const m=$("#ru-mode"),u=$("#ru-unit"),f=()=>$("#sheet").querySelectorAll(".ruh").forEach(x=>x.hidden=m.value!=="1"||(x.classList.contains("rut")&&u.value!=="t")||(x.classList.contains("rup")&&u.value==="t"));m.onchange=f;u.onchange=f;}
+function rulesRead(){const unit=$("#ru-unit").value==="t"?"t":"p",pMin=Number($("#ru-p").value),parMin=Number($("#ru-par").value),pT=Number($("#ru-pt").value),parT=Number($("#ru-part").value);return (unit==="t"?parT>pT:parMin>pMin)?null:{hours:$("#ru-mode").value==="1",unit,pMin,parMin,pT,parT};}
+function rulesSheet(cid){
+  const c=data.classes.get(cid);if(!c)return;const R=classRules(c);
+  openSheet(`<h2>Presença de ${esc(c.name)}</h2><p class="sub">A secretaria deixou você escolher como a presença desta turma é registrada. Vale para as próximas chamadas e também para as aulas já feitas desta turma.</p>
+  <form id="rf" class="form" novalidate>
+    <div class="field full"><label for="ru-read">Leitura do cartão</label><select class="inp" id="ru-read">${Object.entries(MODES).map(([k,l])=>`<option value="${k}" ${(c.mode||"entrada")===k?"selected":""}>${l}</option>`).join("")}</select></div>
+    <div class="field full"><label for="ru-conf">Quando o aluno aproximar o cartão</label><select class="inp" id="ru-conf"><option value="0" ${c.confirm?"":"selected"}>Registrar a presença na hora, sem o professor confirmar</option><option value="1" ${c.confirm?"selected":""}>Esperar o professor conferir a foto e confirmar</option></select><span class="hint">Nos dois casos a foto e os dados do aluno aparecem na tela da chamada.</span></div>
+    <div class="field full"><label for="ru-mode">Como concluir a presença</label><select class="inp" id="ru-mode"><option value="0" ${R.hours?"":"selected"}>Pela leitura do cartão</option><option value="1" ${R.hours?"selected":""}>Pelas horas em sala (entrada e saída)</option></select></div>
+    <div class="field full ruh" ${R.hours?"":"hidden"}><label for="ru-unit">Medir por</label><select class="inp" id="ru-unit"><option value="t" ${R.unit==="t"?"selected":""}>Quantidade de horas em sala</option><option value="p" ${R.unit==="t"?"":"selected"}>Porcentagem da aula</option></select></div>
+    <div class="field ruh rut" ${R.hours&&R.unit==="t"?"":"hidden"}><label for="ru-pt">Presente com pelo menos</label><select class="inp" id="ru-pt">${[...new Set([15,30,45,60,75,90,105,120,150,180,210,240,300,R.pT])].sort((a,b)=>a-b).map(v=>ro(v,fmtMin(v)+" em sala",R.pT)).join("")}</select></div>
+    <div class="field ruh rut" ${R.hours&&R.unit==="t"?"":"hidden"}><label for="ru-part">Parcial com pelo menos</label><select class="inp" id="ru-part">${[...new Set([1,10,15,30,45,60,90,120,R.parT])].sort((a,b)=>a-b).map(v=>ro(v,v===1?"qualquer permanência":fmtMin(v)+" em sala",R.parT)).join("")}</select></div>
+    <div class="field ruh rup" ${R.hours&&R.unit!=="t"?"":"hidden"}><label for="ru-p">Presente a partir de</label><select class="inp" id="ru-p">${[100,90,75,60,50].map(v=>ro(v,v+"% da aula",R.pMin)).join("")}</select></div>
+    <div class="field ruh rup" ${R.hours&&R.unit!=="t"?"":"hidden"}><label for="ru-par">Parcial a partir de</label><select class="inp" id="ru-par">${[50,25,10,1].map(v=>ro(v,v===1?"qualquer permanência":v+"% da aula",R.parMin)).join("")}</select></div>
+    <p class="full note ruh" style="margin:0" ${R.hours?"":"hidden"}>O tempo em sala vai da entrada à saída do aluno, dentro do horário da chamada. Abaixo do mínimo de parcial, o aluno fica ausente. Quem não tiver entrada ou saída registrada fica como parcial, sem horas, até a secretaria corrigir o horário na lista da aula.</p>
+    <div class="full err" id="ru-err"></div>
+    <div class="full foot"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn gold" id="ru-ok">Salvar</button></div>
+  </form>`);
+  rulesWire();
+  $("#rf").onsubmit=async e=>{e.preventDefault();const nr=rulesRead(),err=$("#ru-err");
+    if(!nr){err.textContent="O mínimo de parcial não pode ser maior que o de presente.";return;}
+    const b=$("#ru-ok");b.disabled=true;err.textContent="";
+    try{await api("PUT","classes/"+cid+"/regras",{mode:$("#ru-read").value,rules:nr,confirm:$("#ru-conf").value==="1"});await load();closeSheet();toast("Presença da turma salva");}
+    catch(x){b.disabled=false;err.textContent=x.message;}};
+}
+const norm=v=>String(v==null?"":v).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+const logTitle=l=>(l.className||"Turma")+", aula de "+fmtDay(l.sessionStart)+" · "+new Date(l.at).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
+function logText(l,forStudent){
+  const who=forStudent?(l.byRole==="professor"?"O professor (":"A secretaria (")+(l.by||"")+")":(l.by||"A secretaria"),de=forStudent?"":" de "+(l.studentName||"aluno");
+  if(l.type==="horario"){const b=l.before||{},a=l.after||{},f=v=>v?fmtT(v):"sem registro";
+    if(!a.in&&!a.out)return who+" retirou o horário"+de+(forStudent?"":" em "+(l.className||"Turma")+", aula de "+fmtDay(l.sessionStart))+" (entrada "+f(b.in)+", saída "+f(b.out)+") e registrou falta."+(l.reason?" Motivo: "+l.reason:"");
+    return who+" alterou o horário"+de+(forStudent?"":" em "+(l.className||"Turma")+", aula de "+fmtDay(l.sessionStart))+": entrada "+f(b.in)+" para "+f(a.in)+", saída "+f(b.out)+" para "+f(a.out)+"."+(l.reason?" Motivo: "+l.reason:"");}
+  const ac={registrada:"registrou uma justificativa de falta",alterada:"alterou a justificativa de falta",removida:"removeu a justificativa de falta"}[l.action]||"alterou a justificativa";
+  return who+" "+ac+de+(forStudent?"":" em "+(l.className||"Turma")+", aula de "+fmtDay(l.sessionStart))+"."+(l.note?" Observação: "+l.note:"")+(l.images?" Anexos: "+l.images+".":"")+(l.signedName?" Assinado por "+l.signedName+".":"");
+}
+const hhmm=ts=>{if(!ts)return "";const d=new Date(ts);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");};
+function reportSheet(id){
+  const s=data.sessions.get(id);if(!s)return;const rs=roster(s.classId),lb=L(),staff=state.me.role==="secretaria",cj=staff||state.me.role==="professor",ed=staff||(cj&&!!s.endedAt);
+  const ev=rs.map(st=>evalRec(s,(s.records||{})[st.id],just[id+"/"+st.id]));
+  const rowsData=rs.map((st,i)=>{const r=(s.records||{})[st.id]||{};return [st.name,st.ra,fmtT(r.in),fmtT(r.out),ev[i].ms?fmtDur(ev[i].ms):"",ev[i].t,r.manual?"Sim":"Não"];});
+  openSheet(`<h2 class="h2g">${esc(s.className||"Turma")}</h2><p class="sub">${staff?esc(rulesText(rulesOf(s)))+". ":""}${fmtD(s.startedAt)}, ${fmtT(s.startedAt)}${s.endedAt?" às "+fmtT(s.endedAt):" (em andamento)"}, leitura ${esc((MODES[s.mode]||"").toLowerCase())}, ${presentCount(s,rs)} de ${rs.length} presentes${rulesOf(s).hours&&s.endedAt?", presença pelas horas":""}</p>
+  <div class="tbl"><table><thead><tr><th>Aluno</th><th>${lb.ra}</th><th>Entrada</th><th>Saída</th><th>Em sala</th><th>Situação</th><th>Manual</th>${cj?"<th>Justificativa</th>":""}${ed?"<th>Horário</th>":""}</tr></thead><tbody>${rowsData.map((r,i)=>{const rec=(s.records||{})[rs[i].id]||{};return `<tr><td>${esc(r[0])}</td><td class="t">${esc(r[1])}</td>${ed?`<td><input class="inp tm" type="time" data-in="${esc(rs[i].id)}" value="${hhmm(rec.in)}" aria-label="Entrada de ${esc(r[0])}"></td><td><input class="inp tm" type="time" data-out="${esc(rs[i].id)}" value="${hhmm(rec.out)}" aria-label="Saída de ${esc(r[0])}"></td>`:`<td class="t">${r[2]||"–"}</td><td class="t">${r[3]||"–"}</td>`}<td class="t">${r[4]||"–"}</td><td><span class="chip ${ev[i].k}">${r[5]}</span></td><td>${r[6]}</td>${cj?`<td>${just[id+"/"+rs[i].id]?`<button class="btn sm" data-act="just" data-v="${esc(id+"/"+rs[i].id)}">Ver</button>`:s.endedAt&&ev[i].k!=="ok"?`<button class="btn sm" data-act="just" data-v="${esc(id+"/"+rs[i].id)}">Justificar</button>`:"–"}</td>`:""}${ed?`<td>${rec.in||rec.out?`<button class="btn sm danger" data-act="retirar" data-v="${esc(id+"/"+rs[i].id)}">Retirar e dar falta</button>`:"–"}</td>`:""}</tr>`;}).join("")||`<tr><td colspan="9">Turma sem alunos matriculados.</td></tr>`}</tbody></table></div>
+  ${ed&&rs.length?`<p class="note">Para corrigir um horário ou dar presença a quem ficou com falta, preencha a entrada e a saída e toque em Salvar horários. Para voltar atrás e dar falta, use Retirar e dar falta e escreva o motivo. Cada alteração fica registrada com seu nome e aparece para o aluno.</p>`:""}
+  <div class="err" id="r-err"></div>
+  <div class="foot">${staff?`<button class="btn danger l" id="r-del">Excluir chamada</button>`:""}<button class="btn" id="r-copy">Copiar como planilha</button>${ed&&rs.length?`<button class="btn" id="r-save">Salvar horários</button>`:""}<button class="btn gold" data-act="close">Fechar</button></div>`,true);
+  $("#r-copy").onclick=async()=>{const csv=[["Aluno",lb.ra,"Entrada","Saída","Em sala","Situação","Manual"],...rowsData].map(r=>r.join("\t")).join("\n");try{await navigator.clipboard.writeText(csv);toast("Copiado. Cole no Excel ou no Google Planilhas.");}catch(e){toast("Não foi possível copiar neste navegador.");}};
+  if(staff)$("#r-del").onclick=()=>confirmSheet("Excluir esta chamada?","Os registros de presença desta aula serão apagados.","Excluir chamada",()=>remove("sessions",id));
+  if(ed&&rs.length)$("#r-save").onclick=async()=>{
+    const base=new Date(s.startedAt),at=v=>{if(!v)return null;const [hh,mm]=v.split(":").map(Number),d=new Date(base);d.setHours(hh,mm,0,0);if(d.getTime()<s.startedAt-12*3600000)d.setDate(d.getDate()+1);return d.getTime();};
+    const changes=[];
+    for(const st of rs){const old=(s.records||{})[st.id]||{},i=$(`#sheet [data-in="${CSS.escape(st.id)}"]`),o=$(`#sheet [data-out="${CSS.escape(st.id)}"]`);if(!i||!o)continue;
+      if(i.value===hhmm(old.in)&&o.value===hhmm(old.out))continue;
+      const tin=i.value?(i.value===hhmm(old.in)?old.in:at(i.value)):null,tout=o.value?(o.value===hhmm(old.out)?old.out:at(o.value)):null;
+      if(tin&&tout&&tout<tin){$("#r-err").textContent="A saída de "+st.name+" está antes da entrada.";return;}
+      if(!tin&&!tout){$("#r-err").textContent="Para retirar o horário de "+st.name+", use o botão Retirar e dar falta e escreva o motivo.";return;}
+      changes.push({studentId:st.id,in:tin,out:tout});}
+    if(!changes.length){toast("Nenhum horário foi alterado.");return;}
+    const b=$("#r-save");b.disabled=true;
+    try{await api("POST","sessions/"+id+"/horarios",{changes});closeSheet();await load();toast(changes.length===1?"Horário salvo e registrado":"Horários salvos e registrados");}
+    catch(e){b.disabled=false;$("#r-err").textContent=e.message;}
+  };
+}
+
+/* ---------- retirar horário e dar falta ---------- */
+function retirarSheet(key){
+  const [sid,stid]=key.split("/"),s=data.sessions.get(sid),st=data.students.get(stid),r=s&&(s.records||{})[stid];if(!s||!st||!r)return;
+  openSheet(`<h2>Retirar horário e dar falta</h2><p class="sub">${esc(st.name)}, ${esc(s.className||"Turma")}, aula de ${fmtD(s.startedAt)}. Registro atual: entrada ${r.in?fmtT(r.in):"sem registro"}, saída ${r.out?fmtT(r.out):"sem registro"}.</p>
+  <form id="rtf" class="form" novalidate>
+    <div class="field"><label for="rt-why">Motivo</label><textarea class="inp" id="rt-why" rows="3" maxlength="500" placeholder="Por que o horário está sendo retirado" autofocus></textarea><span class="hint">O aluno fica com falta nesta aula. O motivo e seu nome ficam registrados e aparecem para ele.</span></div>
+    <div class="err" id="rt-err"></div>
+    <div class="foot"><button type="button" class="btn" id="rt-back">Voltar para a aula</button><button class="btn danger" id="rt-ok">Retirar e dar falta</button></div></form>`);
+  $("#rt-back").onclick=()=>reportSheet(sid);
+  $("#rtf").onsubmit=async e=>{e.preventDefault();const why=$("#rt-why").value.trim(),err=$("#rt-err");
+    if(!why){err.textContent="Escreva o motivo para retirar o horário.";return;}
+    const b=$("#rt-ok");b.disabled=true;err.textContent="";
+    try{await api("POST","sessions/"+sid+"/horarios",{changes:[{studentId:stid,in:null,out:null,reason:why}]});await load();reportSheet(sid);toast("Horário retirado e falta registrada");}
+    catch(x){b.disabled=false;err.textContent=x.message;}};
+}
+
+/* ---------- justificativa de falta ---------- */
+function readDoc(file){return new Promise((res,rej)=>{const img=new Image(),u=URL.createObjectURL(file);img.onload=()=>{const k=Math.min(1,1100/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",.72));};img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("Não foi possível abrir essa imagem."));};img.src=u;});}
+function signPad(cv){
+  const x=cv.getContext("2d");let on=false,used=false,lx=0,ly=0;
+  const fit=()=>{const r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1;cv.width=Math.max(1,Math.round(r.width*d));cv.height=Math.max(1,Math.round(r.height*d));x.setTransform(d,0,0,d,0,0);x.fillStyle="#fff";x.fillRect(0,0,r.width,r.height);x.strokeStyle="#111";x.lineWidth=2.2;x.lineCap="round";x.lineJoin="round";used=false;};
+  const pos=e=>{const r=cv.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];};
+  cv.addEventListener("pointerdown",e=>{e.preventDefault();on=true;used=true;[lx,ly]=pos(e);try{cv.setPointerCapture(e.pointerId);}catch(_){ }x.beginPath();x.arc(lx,ly,1.1,0,6.3);x.fillStyle="#111";x.fill();});
+  cv.addEventListener("pointermove",e=>{if(!on)return;e.preventDefault();const [a,b]=pos(e);x.beginPath();x.moveTo(lx,ly);x.lineTo(a,b);x.stroke();lx=a;ly=b;});
+  const end=()=>{on=false;};cv.addEventListener("pointerup",end);cv.addEventListener("pointercancel",end);
+  fit();
+  return {clear:fit,used:()=>used,data:()=>{const c=document.createElement("canvas"),W=600,H=Math.round(600*cv.height/cv.width);c.width=W;c.height=H;c.getContext("2d").drawImage(cv,0,0,W,H);return c.toDataURL("image/jpeg",.8);}};
+}
+const justWhen=j=>new Date(j.at).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
+function justBody(j){
+  return `${j.text?`<div class="jtext">${esc(j.text)}</div>`:""}
+  ${(j.images||[]).length?`<div class="jimgs">${j.images.map((u,i)=>`<a href="${u}" target="_blank" rel="noopener" aria-label="Abrir anexo ${i+1}"><img src="${u}" alt="Anexo ${i+1}"></a>`).join("")}</div>`:""}
+  <div class="jsign"><img src="${j.signature}" alt="Assinatura de ${esc(j.signedName||"")}"><span><b>${esc(j.signedName||"")}</b>Assinou em ${justWhen(j)}${j.by&&j.by!==j.signedName?", registrado por "+esc(j.by):""}</span></div>`;
+}
+async function justSheet(key){
+  const [sid,stid]=key.split("/"),s=data.sessions.get(sid),st=data.students.get(stid);if(!s||!st)return;
+  const head=`<h2>Justificativa de falta</h2><p class="sub">${esc(st.name)}, ${esc(s.className||"Turma")}, aula de ${fmtD(s.startedAt)}</p>`;
+  if(just[key]){
+    openSheet(head+`<p class="note">Abrindo a justificativa...</p><div class="foot"><button class="btn gold" data-act="close">Fechar</button></div>`,true);
+    let j;try{j=await api("GET","sessions/"+sid+"/justificativa/"+stid);}catch(e){openSheet(head+`<div class="err">${esc(e.message)}</div><div class="foot"><button class="btn gold" data-act="close">Fechar</button></div>`,true);return;}
+    openSheet(head+justBody(j)+`<p class="note">Esta falta está justificada: não conta como falta nem entra nas horas previstas do aluno. O aluno vê esta justificativa no cartão dele.</p>
+    <div class="foot">${state.me.role==="secretaria"||j.by===state.me.name?`<button class="btn danger l" id="j-del">Remover justificativa</button>`:""}<button class="btn" id="j-back">Voltar para a aula</button><button class="btn gold" data-act="close">Fechar</button></div>`,true);
+    $("#j-back").onclick=()=>reportSheet(sid);
+    if($("#j-del"))$("#j-del").onclick=()=>confirmSheet("Remover esta justificativa?","A falta volta a contar para o aluno. A remoção fica registrada e aparece para ele.","Remover justificativa",async()=>{try{await api("DELETE","sessions/"+sid+"/justificativa/"+stid);await load();toast("Justificativa removida");}catch(e){toast(e.message);}});
+    return;
+  }
+  let imgs=[];
+  openSheet(head+`<form id="jf" class="form" novalidate>
+    <div class="field"><label for="j-text">Observação</label><textarea class="inp" id="j-text" rows="4" maxlength="4000" placeholder="Motivo da falta, documento apresentado, quem entregou..."></textarea></div>
+    <div class="field"><label for="j-file">Imagens anexas (até 4)</label><input class="inp" id="j-file" type="file" accept="image/*" multiple><div class="jimgs" id="j-prev"></div><span class="hint">Atestado, declaração ou outro comprovante. Escreva a observação, anexe imagens ou faça os dois.</span></div>
+    <div class="field"><label for="j-name">Responsável por esta justificativa</label><input class="inp" id="j-name" maxlength="120" value="${esc(state.me.name)}"></div>
+    <div class="field"><label>Assinatura do responsável</label><canvas id="j-pad" class="pad" aria-label="Área para assinar com o dedo ou o mouse"></canvas><div class="padbar"><span class="hint">Assine com o dedo ou com o mouse.</span><button type="button" class="btn sm" id="j-clear">Limpar assinatura</button></div></div>
+    <div class="err" id="j-err"></div>
+    <div class="foot"><button type="button" class="btn" id="j-back">Voltar para a aula</button><button class="btn gold" id="j-save">Registrar justificativa</button></div></form>`,true);
+  const pad=signPad($("#j-pad")),prev=()=>{$("#j-prev").innerHTML=imgs.map((u,i)=>`<span class="jthumb"><img src="${u}" alt="Anexo ${i+1}"><button type="button" class="btn sm" data-rm="${i}" aria-label="Tirar anexo ${i+1}">Tirar</button></span>`).join("");};
+  $("#j-clear").onclick=()=>pad.clear();
+  $("#j-back").onclick=()=>reportSheet(sid);
+  $("#j-prev").onclick=e=>{const b=e.target.closest("[data-rm]");if(b){imgs.splice(+b.dataset.rm,1);prev();}};
+  $("#j-file").onchange=async e=>{const fs=[...e.target.files];e.target.value="";$("#j-err").textContent="";
+    for(const f of fs){if(imgs.length>=4){$("#j-err").textContent="São até 4 imagens por justificativa.";break;}try{imgs.push(await readDoc(f));}catch(er){$("#j-err").textContent=er.message;}}prev();};
+  $("#jf").onsubmit=async e=>{e.preventDefault();const err=$("#j-err"),text=$("#j-text").value.trim(),name=$("#j-name").value.trim();
+    if(!text&&!imgs.length){err.textContent="Escreva uma observação ou anexe pelo menos uma imagem.";return;}
+    if(!name){err.textContent="Informe o nome de quem assina.";return;}
+    if(!pad.used()){err.textContent="Falta a assinatura do responsável.";return;}
+    const b=$("#j-save");b.disabled=true;err.textContent="";
+    try{await api("PUT","sessions/"+sid+"/justificativa/"+stid,{text,images:imgs,signature:pad.data(),signedName:name});await load();reportSheet(sid);toast("Justificativa registrada");}
+    catch(er){b.disabled=false;err.textContent=er.message;}};
+}
+async function alunoJustSheet(sid){
+  const a=state.aluno,s=a&&a.sessions.find(x=>x.id===sid);if(!s)return;
+  const head=`<h2>Justificativa de falta</h2><p class="sub">${esc(s.className||"Turma")}, aula de ${fmtD(s.startedAt)}</p>`,foot=`<div class="foot"><button class="btn gold" data-act="close">Fechar</button></div>`;
+  openSheet(head+`<p class="note">Abrindo a justificativa...</p>`+foot,true);
+  try{const j=await api("POST","aluno/justificativa",{token:state.alunoKey,sessionId:sid});openSheet(head+justBody(j)+`<p class="note">Esta falta foi justificada: não conta como falta nem entra nas suas horas previstas.</p>`+foot,true);}
+  catch(e){openSheet(head+`<div class="err">${esc(e.message)}</div>`+foot,true);}
+}
+
+/* ---------- eventos ---------- */
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]");if(!b||b.disabled)return;const v=b.dataset.v;
+  switch(b.dataset.act){
+    case "logintab":state.loginTab=v;state.err="";render();break;
+    case "account":accountSheet();break;
+    case "area":state.area=v;render();break;
+    case "tab":state.tab=v;render();break;
+    case "tenant":tenantSheet(v);break;
+    case "user":{const tu=users.find(x=>x.id===v);sheetTab=tu&&tu.role==="professor"?"logins":"equipe";userSheet(v);break;}
+    case "newuser":sheetTab=v==="professor"?"logins":"equipe";userSheet(null,v);break;
+    case "student":sheetTab="alunos";studentSheet(v);break;
+    case "courses":coursesSheet();break;
+    case "class":sheetTab="turmas";classSheet(v);break;
+    case "report":if(state.me.role==="secretaria")sheetTab="freq";reportSheet(v);break;
+    case "logcopy":logExport("copy");break;
+    case "logcsv":logExport("csv");break;
+    case "readyes":{const st=data.students.get(v);if(st)mark({id:v,...st},false,true);break;}
+    case "readno":state.blip=null;render();break;
+    case "pfclear":state.pf={q:"",cls:"",per:"all",from:"",to:""};render();break;
+    case "ofclear":state.of={q:"",cls:"",by:"",per:"all",from:"",to:""};render();break;
+    case "endopen":{const s=data.sessions.get(v);if(!s)break;confirmSheet("Encerrar a chamada de "+(s.className||"Turma")+"?","Novas leituras deixam de ser aceitas e quem não registrou presença fica como ausente. O encerramento fica no Registro.","Encerrar chamada",async()=>{try{await api("POST","sessions/"+v+"/encerrar");await load();toast("Chamada encerrada");}catch(e){toast(e.message);}});break;}
+    case "logclear":state.lg={q:"",type:"",by:"",per:"all",from:"",to:""};render();break;
+    case "just":justSheet(v);break;
+    case "retirar":retirarSheet(v);break;
+    case "fclear":for(const k of v.split(","))if(k==="q")state.q="";else state.flt[k]="";render();break;
+    case "alunojust":alunoJustSheet(v);break;
+    case "rules":rulesSheet(v);break;
+    case "repcopy":repExport("copy");break;
+    case "repcsv":repExport("csv");break;
+    case "repprint":window.print();break;
+    case "start":startSheet(v);break;
+    case "resume":state.sessionId=v;state.blip=null;render();break;
+    case "back":state.sessionId=null;render();break;
+    case "end":confirmSheet("Encerrar a chamada?","Depois de encerrada, novas leituras não são aceitas. Quem não registrou presença fica como ausente.","Encerrar chamada",()=>{const se=activeSession();if(!se)return;const {id,...body}=se;save("sessions",id,{...body,endedAt:Date.now()});state.sessionId=null;toast("Chamada encerrada");});break;
+    case "manual":{const st=data.students.get(v);if(st)mark({id:v,...st},true);break;}
+    case "undo":unmark(v);break;
+    case "nfc":nfcScan(handleUid);break;
+    case "scan":scanSheet();break;
+    case "wallet":addWallet(v);break;
+    case "walletqr":walletQrSheet();break;
+    case "walletqrnew":walletQrSheet(true);break;
+    case "newcard":confirmSheet("Gerar novo código e QR code?","O número e o QR code atuais param de funcionar na hora. Se você guardou o cartão na Carteira do celular, vai precisar refazer.","Gerar novos",async()=>{if(await newCard())toast("Novo código e QR code gerados.");});break;
+    case "leave":alunoOut();state.askedPw=false;render();break;
+    case "alunopw":alunoPwSheet();break;
+    case "day":state.day=state.day===v?null:v;render();break;
+    case "alunofoto":alunoFotoSheet();break;
+    case "forgot":forgotSheet();break;
+    case "resetpw":confirmSheet("Redefinir a senha deste aluno?","A senha atual é apagada. No próximo acesso, o aluno entra só com a matrícula e cria uma senha nova.","Redefinir senha",async()=>{try{await api("DELETE","students/"+v+"/senha");toast("Senha redefinida");}catch(x){toast(x.message);}load().catch(()=>{});});break;
+    case "close":closeSheet();break;
+  }
+});
+$("#veil").addEventListener("mousedown",e=>{if(e.target.id==="veil")closeSheet();});
+document.addEventListener("input",e=>{
+  if(e.target.id==="q"){state.q=e.target.value;render();}
+  if(e.target.id==="aq"){state.aq=e.target.value;render();}
+  if(e.target.id==="r-q"){state.rep.q=e.target.value;render();}
+  if(e.target.id==="lg-q"){state.lg.q=e.target.value;render();}
+  if(e.target.id==="pf-q"){state.pf.q=e.target.value;render();}
+  if(e.target.id==="of-q"){state.of.q=e.target.value;render();}
+  if(e.target.dataset.f&&e.target.tagName==="INPUT"){state.flt[e.target.dataset.f]=e.target.value;render();}
+  if(e.target.id==="code")e.target.value=e.target.value.replace(/\D/g,"");
+});
+document.addEventListener("change",e=>{
+  if(e.target.id==="f-subj"){state.fSubj=e.target.value;state.day=null;render();}
+  if(e.target.id==="f-per"){state.fPer=e.target.value;state.day=null;render();}
+  if(e.target.id==="f-from"){state.fFrom=e.target.value;state.day=null;render();}
+  if(e.target.id==="f-to"){state.fTo=e.target.value;state.day=null;render();}
+  if(e.target.dataset.f&&e.target.tagName==="SELECT"){state.flt[e.target.dataset.f]=e.target.value;render();}
+  const pk={"pf-cls":"cls","pf-per":"per","pf-from":"from","pf-to":"to"}[e.target.id];
+  if(pk){state.pf[pk]=e.target.value;render();}
+  const ok2={"of-cls":"cls","of-by":"by","of-per":"per","of-from":"from","of-to":"to"}[e.target.id];
+  if(ok2){state.of[ok2]=e.target.value;render();}
+  const lk={"lg-type":"type","lg-by":"by","lg-per":"per","lg-from":"from","lg-to":"to"}[e.target.id];
+  if(lk){state.lg[lk]=e.target.value;render();}
+  const rk={"r-view":"view","r-cls":"cls","r-course":"course","r-per":"per","r-from":"from","r-to":"to","r-min":"min"}[e.target.id];
+  if(rk){state.rep[rk]=e.target.value;render();}
+});
+document.addEventListener("submit",async e=>{
+  const id=e.target.id;
+  if(id==="codeform"){e.preventDefault();const i=$("#code"),c=i.value.trim();i.value="";if(c.length===6)handleCode(c);else toast("O código tem 6 números.");}
+  if(id==="setupform"||id==="loginform"){e.preventDefault();
+    const body=id==="setupform"?{name:$("#su-name").value,login:$("#su-login").value,password:$("#su-pw").value}:{login:$("#lg-login").value,password:$("#lg-pw").value};
+    try{await api("POST",id==="setupform"?"setup":"login",body);const r=await api("GET","me");if(r.user)enter(r);else{state.err=r.aviso||"Não foi possível entrar.";render();}}
+    catch(x){state.err=x.message;const g=$("#gate-err");if(g)g.textContent=x.message;}}
+  if(id==="alunoform"){e.preventDefault();
+    try{const j=await api("POST","aluno/entrar",{inst:$("#al-inst").value,ra:$("#al-ra").value,password:$("#al-pw").value});alunoIn(j);render();
+      if(!j.hasPassword&&!state.askedPw){state.askedPw=true;setTimeout(alunoPwSheet,300);}}
+    catch(x){state.err=x.message;const g=$("#gate-err");if(g)g.textContent=x.message;}}
+});
+/* Leitor USB: digita o código do cartão e manda Enter. */
+let lastKey=0;
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&$("#veil").classList.contains("open")){closeSheet();return;}
+  if(state.phase!=="app"||state.area!=="professor"||!activeSession()||$("#veil").classList.contains("open"))return;
+  const t=e.target;if(t&&(t.tagName==="INPUT"||t.tagName==="SELECT"||t.tagName==="TEXTAREA"))return;
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  const now=Date.now();if(now-lastKey>3000)state.typed="";lastKey=now;
+  if(e.key==="Enter"){if(state.typed.length>=4){const u=state.typed;state.typed="";e.preventDefault();handleUid(u);}else state.typed="";}
+  else if(e.key.length===1&&/[0-9a-zA-Z:]/.test(e.key))state.typed=(state.typed+e.key).slice(-32);
+  else return;
+  const el=$("#typing");if(el)el.textContent=state.typed;
+});
+window.addEventListener("focus",()=>{if(state.phase==="app")load().catch(()=>{});});
+render();boot();
+</script>
+</body>
+</html>

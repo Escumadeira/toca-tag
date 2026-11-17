@@ -1,0 +1,22 @@
+{
+  "apple": {
+    "passTypeIdentifier": "",
+    "teamIdentifier": "",
+    "organizationName": "TOCA tag",
+    "keyPassword": "",
+    "nfc": {
+      "encryptionPublicKey": ""
+    }
+  },
+  "google": {
+    "issuerId": "",
+    "classSuffix": "tocatag_aluno",
+    "logoUrl": "https://tocatag.net/mark.png",
+    "origins": [
+      "https://tocatag.net"
+    ],
+    "smartTap": {
+      "redemptionIssuers": []
+    }
+  }
+}
