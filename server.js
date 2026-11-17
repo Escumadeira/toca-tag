@@ -1,3 +1,4 @@
+require("./licenca.js").proteger(); // trava: o TOCA tag só roda no computador autorizado (ver licenca.js)
 // TOCA tag - servidor para várias instituições (faculdades e escolas).
 // Não precisa instalar nada além do Node.js. Uso: node server.js (ou iniciar.bat)
 const http = require("http"), fs = require("fs"), path = require("path"), os = require("os"), crypto = require("crypto");
